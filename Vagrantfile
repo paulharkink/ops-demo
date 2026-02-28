@@ -67,7 +67,8 @@ $provision = <<-SHELL
 
   # ── 5. yq (used by Tekton bump-image-tag task) ─────────────────────────────
   YQ_VERSION="v4.44.3"
-  curl -sSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
+  ARCH=$(dpkg --print-architecture)   # amd64 or arm64
+  curl -sSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH}" \
     -o /usr/local/bin/yq
   chmod +x /usr/local/bin/yq
 
@@ -83,10 +84,11 @@ $provision = <<-SHELL
     "quay.io/metallb/controller:v0.14.9"
     "quay.io/metallb/speaker:v0.14.9"
     "registry.k8s.io/ingress-nginx/controller:v1.12.0"
-    "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/controller:v0.65.1"
-    "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/webhook:v0.65.1"
-    "alpine/git:latest"
-    "mikefarah/yq:4.44.3"
+    "ghcr.io/tektoncd/pipeline/controller-10a3e32792f33651396d02b6855a6e36:v0.65.1"
+    "ghcr.io/tektoncd/pipeline/webhook-d4749e605405422fd87700164e31b2d1:v0.65.1"
+    "ghcr.io/tektoncd/pipeline/resolvers-ff86b24f130c42b88983d3c13993056d:v0.65.1"
+    "docker.io/alpine/git:latest"
+    "docker.io/mikefarah/yq:4.44.3"
   )
 
   for img in "${images[@]}"; do
