@@ -1,216 +1,272 @@
-# Exercise 04 — Tekton Pipeline (GitOps Loop)
+# Oefening 04 — Tekton Pipeline
 
-**Time**: ~45 min
-**Goal**: Build an automated pipeline that bumps the podinfo image tag in Git and watches ArgoCD roll out the new version — the full GitOps CI/CD loop.
-
----
-
-## What you'll learn
-- Tekton concepts: Task, Pipeline, PipelineRun, Workspace
-- How a pipeline commits to Git to trigger a GitOps deployment (no container registry needed)
-- The full loop: pipeline push → ArgoCD detects → rolling update → new version in browser
+**Tijd**: ~45 minuten
+**Doel**: Een pipeline bouwen die automatisch de image-tag in Git aanpast en ArgoCD de update laat uitrollen — de volledige GitOps CI/CD-loop.
 
 ---
 
-## The loop visualised
+## Wat je leert
+
+- Tekton-concepten: Task, Pipeline, PipelineRun, Workspace
+- Hoe een pipeline via een Git-commit een GitOps-deployment triggert (geen container registry nodig)
+- De volledige loop: pipeline push → ArgoCD detecteert → rolling update → nieuwe versie in browser
+
+---
+
+## De loop
 
 ```
-You trigger PipelineRun
+Jij triggert een PipelineRun
         │
         ▼
 Task 1: clone repo
-Task 2: validate manifests (kubectl dry-run)
-Task 3: bump image tag  →  deployment.yaml: 6.6.2 → 6.7.0
+Task 2: valideer manifests (kubectl dry-run)
+Task 3: pas image-tag aan  →  deployment.yaml: 6.6.2 → 6.7.0
 Task 4: git commit + push
         │
         ▼
-ArgoCD polls repo (or click Refresh)
+ArgoCD detecteert de commit
         │
         ▼
-ArgoCD syncs podinfo Deployment
+ArgoCD synchroniseert de podinfo Deployment
         │
         ▼
-Rolling update → podinfo v6.7.0 in your browser
+Rolling update → podinfo v6.7.0 in je browser
 ```
 
 ---
 
-## Prerequisites
+## Vereisten
 
-Exercises 01–03 complete. podinfo is reachable at **http://podinfo.192.168.56.200.nip.io** and shows version **6.6.2**.
+Oefeningen 01–03 afgerond. podinfo is bereikbaar via **http://podinfo.192.168.56.200.nip.io** en toont versie **6.6.2**.
 
-You need:
-- A GitHub account with write access to the `ops-demo` repo
-- A GitHub Personal Access Token (PAT) with **repo** scope
+Je hebt nodig:
+- Een GitHub Personal Access Token (PAT) met **repo**-scope (lezen + schrijven)
 
 ---
 
-## Steps
+## Stappen
 
-### 1. Verify Tekton is installed
+### 1. Tekton installeren via ArgoCD
 
-The `apps/ci/tekton.yaml` and `apps/ci/pipeline.yaml` ArgoCD Applications are
-already in the repo. ArgoCD is installing Tekton via a kustomize remote reference.
+**`manifests/ci/tekton/kustomization.yaml`**
+```yaml
+resources:
+  - https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.65.1/release.yaml
+```
 
-Wait for the install to complete (~3–5 min after the app appears in ArgoCD):
+**`apps/ci/tekton.yaml`**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tekton
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: workshop
+  source:
+    repoURL: JOUW_FORK_URL
+    targetRevision: HEAD
+    path: manifests/ci/tekton
+    kustomize: {}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-pipelines
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+```
+
+```bash
+git add apps/ci/tekton.yaml manifests/ci/tekton/
+git commit -m "feat: installeer Tekton via ArgoCD"
+git push
+```
+
+Wacht tot Tekton draait (~3–5 minuten):
 
 ```bash
 kubectl get pods -n tekton-pipelines
-# NAME                                         READY   STATUS    RESTARTS
-# tekton-pipelines-controller-xxx              1/1     Running   0
-# tekton-pipelines-webhook-xxx                 1/1     Running   0
-```
-
-Also check that the pipeline resources are synced:
-
-```bash
-kubectl get pipeline -n tekton-pipelines
-# NAME                 AGE
-# gitops-image-bump    Xm
+# tekton-pipelines-controller-xxx   1/1   Running
+# tekton-pipelines-webhook-xxx      1/1   Running
 ```
 
 ---
 
-### 2. Set up Git credentials
+### 2. Pipeline-resources aanmaken
 
-The pipeline needs to push a commit to GitHub. Create a Personal Access Token:
-
-1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens** (or classic with `repo` scope)
-2. Give it write access to the `ops-demo` repository
-
-Then create the Kubernetes Secret (this command replaces the placeholder Secret if it already exists):
-
-```bash
-./scripts/set-git-credentials.sh <your-github-username> <your-pat>
+**`manifests/ci/pipeline/serviceaccount.yaml`**
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipeline-runner
+  namespace: tekton-pipelines
 ```
 
-Verify:
+**`manifests/ci/pipeline/pipeline.yaml`** — zie de solution branch voor de volledige inhoud, of kopieer uit `reference-solution`:
 
 ```bash
-kubectl get secret git-credentials -n tekton-pipelines
-# NAME              TYPE     DATA   AGE
-# git-credentials   Opaque   2      5s
+git show origin/solution/04-tekton-pipeline:manifests/ci/pipeline/pipeline.yaml
+```
+
+**`manifests/ci/pipeline/pipelinerun.yaml`**
+```yaml
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: bump-podinfo-to-670
+  namespace: tekton-pipelines
+spec:
+  pipelineRef:
+    name: gitops-image-bump
+  taskRunTemplate:
+    serviceAccountName: pipeline-runner
+  params:
+    - name: repo-url
+      value: JOUW_FORK_URL
+    - name: new-tag
+      value: "6.7.0"
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
+    - name: git-credentials
+      secret:
+        secretName: git-credentials
+```
+
+**`apps/ci/pipeline.yaml`**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: workshop-pipeline
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  project: workshop
+  source:
+    repoURL: JOUW_FORK_URL
+    targetRevision: HEAD
+    path: manifests/ci/pipeline
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-pipelines
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+```bash
+git add apps/ci/pipeline.yaml manifests/ci/pipeline/
+git commit -m "feat: voeg pipeline-resources toe"
+git push
 ```
 
 ---
 
-### 3. Trigger the pipeline
+### 3. Git-credentials instellen
 
-Apply the PipelineRun (this is the only `kubectl apply` you'll run in this exercise):
+De pipeline moet kunnen pushen naar jouw fork. Maak een GitHub PAT aan met `repo`-scope en voer dan uit:
+
+```bash
+./scripts/set-git-credentials.sh <jouw-github-gebruikersnaam> <jouw-pat>
+```
+
+Dit maakt een Kubernetes Secret aan in de cluster — **het PAT komt niet in Git**.
+
+---
+
+### 4. Pipeline triggeren
 
 ```bash
 kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 ```
 
-Watch it run:
+Volg de voortgang:
 
 ```bash
 kubectl get pipelinerun -n tekton-pipelines -w
 ```
 
-Or follow the logs with tkn (Tekton CLI, optional):
-
-```bash
-# If tkn is installed:
-tkn pipelinerun logs -f -n tekton-pipelines bump-podinfo-to-670
-```
-
-Or follow individual TaskRun pods:
+Of per pod:
 
 ```bash
 kubectl get pods -n tekton-pipelines -w
-# Once a pod appears, you can:
-kubectl logs -n tekton-pipelines <pod-name> -c step-bump --follow
 ```
 
-The PipelineRun should complete in ~2–3 minutes.
+De PipelineRun duurt ~2–3 minuten.
 
 ---
 
-### 4. Verify the commit
+### 5. Controleer de commit
 
 ```bash
-# Inside the VM — check the latest commit on the remote
 git fetch origin
 git log origin/main --oneline -3
-# You should see something like:
-# a1b2c3d chore(pipeline): bump podinfo to 6.7.0
-# ...
+# Je ziet: chore(pipeline): bump podinfo to 6.7.0
 ```
-
-Or check GitHub directly in your browser.
 
 ---
 
-### 5. Watch ArgoCD sync
+### 6. ArgoCD laten synchroniseren
 
-In the ArgoCD UI, click **Refresh** on the **podinfo** application.
-
-ArgoCD will detect that `manifests/apps/podinfo/deployment.yaml` changed and
-start a rolling update.
+Klik **Refresh** op de **podinfo** application in ArgoCD, of wacht op het automatische poll-interval.
 
 ```bash
 kubectl rollout status deployment/podinfo -n podinfo
-# deployment "podinfo" successfully rolled out
 ```
 
 ---
 
-### 6. Confirm in the browser
+### 7. Controleer in de browser
 
-Open **http://podinfo.192.168.56.200.nip.io** — you should now see **version 6.7.0**.
+Open **http://podinfo.192.168.56.200.nip.io** — je ziet nu versie **6.7.0**.
 
 ```bash
 curl http://podinfo.192.168.56.200.nip.io | jq .version
 # "6.7.0"
 ```
 
-The full loop is complete.
-
 ---
 
-## Expected outcome
+## Pipeline opnieuw uitvoeren
 
-```
-PipelineRun STATUS: Succeeded
-deployment.yaml image tag: 6.7.0
-podinfo UI version: 6.7.0
-```
-
----
-
-## Re-running the pipeline
-
-The `PipelineRun` name must be unique. To run again:
+De naam van een PipelineRun moet uniek zijn:
 
 ```bash
-# Option A: delete and re-apply with same name
 kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
 kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
-
-# Option B: create a new run with a different name
-kubectl create -f manifests/ci/pipeline/pipelinerun.yaml
 ```
 
 ---
 
-## Troubleshooting
+## Probleemoplossing
 
-| Symptom | Fix |
-|---------|-----|
-| PipelineRun stuck in "Running" forever | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670` |
-| `git-credentials` Secret not found | Run `./scripts/set-git-credentials.sh` first |
-| Push fails: 403 Forbidden | PAT has insufficient scope — needs `repo` write access |
-| Push fails: remote already has this commit | Image tag already at 6.7.0; the pipeline is idempotent (nothing to push) |
-| ArgoCD not syncing after push | Click **Refresh** in the UI; default poll interval is 3 min |
-| Validate task fails | Check `kubectl apply --dry-run=client -f manifests/apps/podinfo/` manually |
+| Symptoom | Oplossing |
+|----------|-----------|
+| PipelineRun blijft "Running" | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670` |
+| Secret `git-credentials` niet gevonden | Voer `./scripts/set-git-credentials.sh` uit |
+| Push mislukt: 403 Forbidden | PAT heeft onvoldoende rechten — `repo`-scope vereist |
+| ArgoCD synchroniseert niet | Klik **Refresh** in de UI |
 
 ---
 
-## What's next
+## Volgende stap
 
-Exercise 05 is a quick wrap-up: you'll look at the full picture of what you built
-and optionally trigger another upgrade cycle to cement the GitOps loop.
-
-If you have time, try the **Bonus Exercise 06**: deploy Prometheus + Grafana and
-see cluster and podinfo metrics in a live dashboard.
+In Oefening 05 kijk je terug op wat je gebouwd hebt en experimenteer je met drift detection.

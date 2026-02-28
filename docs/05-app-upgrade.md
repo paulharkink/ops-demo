@@ -1,80 +1,75 @@
-# Exercise 05 — App Upgrade via GitOps
+# Oefening 05 — App upgrade en reflectie
 
-**Time**: ~15 min (often done as the final step of Exercise 04)
-**Goal**: Reflect on the complete GitOps loop you've built and optionally run another upgrade cycle.
+**Tijd**: ~15 minuten
+**Doel**: Terugkijken op wat je gebouwd hebt en de GitOps-loop nog een keer doorlopen.
 
 ---
 
-## What you built
-
-You now have a fully functioning GitOps platform:
+## Wat je gebouwd hebt
 
 ```
-Git repo (source of truth)
+Git-repo (single source of truth)
       │
-      │  ArgoCD polls every 3 min (or on Refresh)
+      │  ArgoCD pollt elke 3 minuten
       ▼
 ArgoCD (GitOps engine)
-      │  detects drift between Git and cluster
+      │  detecteert drift tussen Git en cluster
       ▼
 Kubernetes cluster
-      │  MetalLB assigns LAN IP to Ingress-Nginx
+      │  MetalLB kent LAN-IP toe aan Ingress-Nginx
       ▼
-Ingress-Nginx (routes by hostname)
+Ingress-Nginx (routeert op hostname)
       │
       ├─► podinfo.192.168.56.200.nip.io  →  podinfo Deployment
       └─► argocd.192.168.56.200.nip.io   →  ArgoCD UI
 ```
 
-And a CI pipeline that closes the loop:
+En een CI-pipeline die de loop sluit:
 
 ```
 Tekton PipelineRun
       │
-      ├─ validate manifests
-      ├─ bump image tag in deployment.yaml
+      ├─ valideer manifests
+      ├─ pas image-tag aan in deployment.yaml
       └─ git push
             │
             ▼
-      ArgoCD detects commit → syncs → rolling update
+      ArgoCD detecteert commit → synchroniseert → rolling update
 ```
 
 ---
 
-## Reflect: What makes this "GitOps"?
+## Waarom is dit "GitOps"?
 
-1. **Git is the source of truth** — the cluster state is always derived from this repo
-2. **No manual kubectl apply** — all cluster changes go through Git commits
-3. **Drift detection** — if someone manually changes something in the cluster, ArgoCD reverts it
-4. **Audit trail** — every cluster change has a corresponding Git commit
-5. **Rollback = git revert** — no special tooling needed
+1. **Git is de enige bron van waarheid** — de cluster-staat is altijd afgeleid van deze repo
+2. **Geen handmatige `kubectl apply`** — alle cluster-wijzigingen gaan via Git-commits
+3. **Drift detection** — iemand past iets handmatig aan in de cluster? ArgoCD draait het terug
+4. **Auditlog** — elke cluster-wijziging heeft een bijbehorende Git-commit
+5. **Rollback = `git revert`** — geen speciale tooling nodig
 
 ---
 
-## Optional: Try a manual upgrade
+## Probeer het: handmatige downgrade
 
-If the pipeline already bumped podinfo to `6.7.0`, try a manual downgrade to see
-the loop in reverse:
+Als de pipeline podinfo al naar `6.7.0` heeft gebracht, probeer dan een handmatige downgrade:
 
 ```bash
-# Edit the image tag back to 6.6.2
+# Pas de image-tag terug aan naar 6.6.2
 vim manifests/apps/podinfo/deployment.yaml
-# Change: ghcr.io/stefanprodan/podinfo:6.7.0
-# To:     ghcr.io/stefanprodan/podinfo:6.6.2
 
 git add manifests/apps/podinfo/deployment.yaml
-git commit -m "chore: downgrade podinfo to 6.6.2 for demo"
+git commit -m "chore: downgrade podinfo naar 6.6.2"
 git push
 ```
 
-Watch ArgoCD sync in the UI, then verify:
+Kijk hoe ArgoCD synchroniseert, en verifieer:
 
 ```bash
 curl http://podinfo.192.168.56.200.nip.io | jq .version
 # "6.6.2"
 ```
 
-Now upgrade again via the pipeline:
+En upgrade dan weer via de pipeline:
 
 ```bash
 kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
@@ -83,40 +78,34 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 
 ---
 
-## Optional: Test drift detection
+## Probeer het: drift detection
 
-ArgoCD's `selfHeal: true` means it will automatically revert manual cluster changes.
-
-Try bypassing GitOps:
+ArgoCD heeft `selfHeal: true` — hij draait handmatige cluster-wijzigingen automatisch terug.
 
 ```bash
-# Change the image tag directly in the cluster (not via Git)
+# Wijzig de image-tag direct in de cluster (buiten Git om)
 kubectl set image deployment/podinfo podinfo=ghcr.io/stefanprodan/podinfo:6.5.0 -n podinfo
 ```
 
-Watch the ArgoCD UI — within seconds you'll see the `podinfo` app go **OutOfSync**,
-then ArgoCD reverts it back to whatever tag is in Git. The cluster drifted; GitOps corrected it.
+Kijk in de ArgoCD UI — binnen seconden gaat de podinfo-app op **OutOfSync**, en daarna zet ArgoCD hem terug naar wat er in Git staat.
 
 ---
 
-## Summary
+## Samenvatting
 
-| Component | Purpose | How deployed |
-|-----------|---------|-------------|
-| k3s | Kubernetes | Vagrantfile |
-| ArgoCD | GitOps engine | bootstrap.sh → self-manages |
-| MetalLB | LoadBalancer IPs | ArgoCD |
-| Ingress-Nginx | HTTP routing | ArgoCD |
-| podinfo | Demo app | ArgoCD |
-| Tekton | CI pipeline | ArgoCD |
+| Component     | Rol                  | Hoe gedeployed     |
+|---------------|----------------------|--------------------|
+| k3s           | Kubernetes           | Vagrantfile        |
+| ArgoCD        | GitOps engine        | bootstrap.sh       |
+| MetalLB       | LoadBalancer IPs     | ArgoCD             |
+| Ingress-Nginx | HTTP-routing         | ArgoCD             |
+| podinfo       | Demo-applicatie      | ArgoCD             |
+| Tekton        | CI-pipeline          | ArgoCD             |
 
 ---
 
-## What's next
+## Volgende stap
 
-If you have time, try **Exercise 06 (Bonus)**: deploy Prometheus + Grafana and
-observe your cluster and podinfo metrics in a live dashboard.
+Als je nog tijd hebt: **Oefening 06 (bonus)** — Prometheus + Grafana deployen en cluster-metrics bekijken in een live dashboard.
 
-Otherwise, join the **final presentation** for a discussion on:
-- Why GitOps in production
-- What comes next: Vault, ApplicationSets, Argo Rollouts
+Anders: sluit af met de **presentatie** over GitOps in productie.
