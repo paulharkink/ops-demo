@@ -11,7 +11,6 @@ spec:
     repoURL: https://github.com/paulharkink/ops-demo.git
     targetRevision: HEAD
     path: manifests/ci/tekton
-    kustomize: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: tekton-pipelines
