@@ -1,0 +1,8 @@
+# MetalLB Helm values
+# No special configuration needed at chart level;
+# IP pool is configured via metallb-config.yaml (CRDs).
+speaker:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
