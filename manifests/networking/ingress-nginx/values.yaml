@@ -1,0 +1,17 @@
+# Ingress-Nginx Helm values
+# The controller's LoadBalancer service will get 192.168.56.200 from MetalLB.
+# All workshop ingresses use IngressClass "nginx".
+controller:
+  ingressClassResource:
+    name: nginx
+    default: true
+
+  service:
+    type: LoadBalancer
+    # Request a specific IP so docs can reference it reliably
+    loadBalancerIP: "192.168.56.200"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
