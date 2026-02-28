@@ -1,0 +1,173 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: gitops-image-bump
+  namespace: tekton-pipelines
+spec:
+  description: |
+    Validates manifests, bumps the podinfo image tag in deployment.yaml,
+    and pushes the commit back to the ops-demo repo.
+    ArgoCD then detects the change and rolls out the new image.
+
+  params:
+    - name: repo-url
+      type: string
+      description: URL of the ops-demo git repository
+      default: https://github.com/innspire/ops-demo.git
+    - name: new-tag
+      type: string
+      description: New podinfo image tag to set (e.g. 6.7.0)
+      default: "6.7.0"
+    - name: git-user-name
+      type: string
+      description: Git author name for the bump commit
+      default: "Workshop Pipeline"
+    - name: git-user-email
+      type: string
+      description: Git author email for the bump commit
+      default: "pipeline@workshop.local"
+
+  workspaces:
+    - name: source
+      description: Workspace for cloning the repo
+    - name: git-credentials
+      description: Secret with GitHub username + PAT (basic-auth)
+
+  tasks:
+    # ── Task 1: Clone the repo ─────────────────────────────────────────────
+    - name: clone
+      taskSpec:
+        workspaces:
+          - name: source
+          - name: git-credentials
+        params:
+          - name: repo-url
+          - name: git-user-name
+          - name: git-user-email
+        steps:
+          - name: clone
+            image: alpine/git:latest
+            workingDir: /workspace/source
+            env:
+              - name: GIT_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: git-credentials
+                    key: username
+              - name: GIT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: git-credentials
+                    key: password
+            script: |
+              #!/bin/sh
+              set -eu
+              # Inject credentials into the clone URL
+              REPO=$(echo "$(params.repo-url)" | sed "s|https://|https://${GIT_USERNAME}:${GIT_PASSWORD}@|")
+              git clone "${REPO}" .
+              git config user.name "$(params.git-user-name)"
+              git config user.email "$(params.git-user-email)"
+              echo "Cloned $(git log --oneline -1)"
+      workspaces:
+        - name: source
+          workspace: source
+        - name: git-credentials
+          workspace: git-credentials
+      params:
+        - name: repo-url
+          value: $(params.repo-url)
+        - name: git-user-name
+          value: $(params.git-user-name)
+        - name: git-user-email
+          value: $(params.git-user-email)
+
+    # ── Task 2: Validate manifests (dry-run) ──────────────────────────────
+    - name: validate
+      runAfter: [clone]
+      taskSpec:
+        workspaces:
+          - name: source
+        steps:
+          - name: dry-run
+            image: bitnami/kubectl:latest
+            workingDir: /workspace/source
+            script: |
+              #!/bin/sh
+              set -eu
+              echo "Running kubectl dry-run on manifests/apps/podinfo/"
+              kubectl apply --dry-run=client -f manifests/apps/podinfo/
+              echo "Validation passed."
+      workspaces:
+        - name: source
+          workspace: source
+
+    # ── Task 3: Bump image tag ─────────────────────────────────────────────
+    - name: bump-image-tag
+      runAfter: [validate]
+      taskSpec:
+        workspaces:
+          - name: source
+        params:
+          - name: new-tag
+        steps:
+          - name: bump
+            image: mikefarah/yq:4.44.3
+            workingDir: /workspace/source
+            script: |
+              #!/bin/sh
+              set -eu
+              FILE="manifests/apps/podinfo/deployment.yaml"
+              CURRENT=$(yq '.spec.template.spec.containers[0].image' "${FILE}")
+              echo "Current image: ${CURRENT}"
+              yq -i '.spec.template.spec.containers[0].image = "ghcr.io/stefanprodan/podinfo:$(params.new-tag)"' "${FILE}"
+              UPDATED=$(yq '.spec.template.spec.containers[0].image' "${FILE}")
+              echo "Updated image: ${UPDATED}"
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: new-tag
+          value: $(params.new-tag)
+
+    # ── Task 4: Commit and push ────────────────────────────────────────────
+    - name: git-commit-push
+      runAfter: [bump-image-tag]
+      taskSpec:
+        workspaces:
+          - name: source
+          - name: git-credentials
+        params:
+          - name: new-tag
+        steps:
+          - name: push
+            image: alpine/git:latest
+            workingDir: /workspace/source
+            env:
+              - name: GIT_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: git-credentials
+                    key: username
+              - name: GIT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: git-credentials
+                    key: password
+            script: |
+              #!/bin/sh
+              set -eu
+              git add manifests/apps/podinfo/deployment.yaml
+              git commit -m "chore(pipeline): bump podinfo to $(params.new-tag)"
+
+              # Inject credentials for push
+              REMOTE_URL=$(git remote get-url origin | sed "s|https://|https://${GIT_USERNAME}:${GIT_PASSWORD}@|")
+              git push "${REMOTE_URL}" HEAD:main
+              echo "Pushed commit: $(git log --oneline -1)"
+      workspaces:
+        - name: source
+          workspace: source
+        - name: git-credentials
+          workspace: git-credentials
+      params:
+        - name: new-tag
+          value: $(params.new-tag)

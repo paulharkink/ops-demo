@@ -1,0 +1,32 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  # Change the name (e.g. bump-to-670-run2) each time you trigger the pipeline,
+  # or delete the old PipelineRun first — names must be unique.
+  name: bump-podinfo-to-670
+  namespace: tekton-pipelines
+spec:
+  pipelineRef:
+    name: gitops-image-bump
+  taskRunTemplate:
+    serviceAccountName: pipeline-runner
+  params:
+    - name: repo-url
+      value: https://github.com/innspire/ops-demo.git
+    - name: new-tag
+      value: "6.7.0"
+    - name: git-user-name
+      value: "Workshop Pipeline"
+    - name: git-user-email
+      value: "pipeline@workshop.local"
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
+    - name: git-credentials
+      secret:
+        secretName: git-credentials
