@@ -74,7 +74,6 @@ spec:
     repoURL: JOUW_FORK_URL
     targetRevision: HEAD
     path: manifests/ci/tekton
-    kustomize: { }
   destination:
     server: https://kubernetes.default.svc
     namespace: tekton-pipelines
@@ -272,6 +271,7 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 | Secret `git-credentials` niet gevonden | Voer `./scripts/vm/set-git-credentials.sh` uit                         |
 | Push mislukt: 403 Forbidden            | PAT heeft onvoldoende rechten — `repo`-scope vereist                   |
 | ArgoCD synchroniseert niet             | Klik **Refresh** in de UI                                              |
+| `root` blijft OutOfSync op app `tekton` | Verwijder de lege `kustomize: {}` uit `apps/ci/tekton.yaml` (Argo normaliseert deze weg in live state) |
 
 ---
 
