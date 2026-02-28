@@ -43,6 +43,11 @@ require_cmd git
 require_cmd kubectl
 require_cmd helm
 
+# vagrant ssh -c can inherit host KUBECONFIG; force VM kubeconfig for safety.
+if [[ -f /home/vagrant/.kube/config ]]; then
+  export KUBECONFIG=/home/vagrant/.kube/config
+fi
+
 if ! kubectl get nodes >/dev/null 2>&1; then
   die "kubectl kan het cluster niet bereiken. Log in op de VM met 'vagrant ssh' en run het script vanaf /vagrant."
 fi

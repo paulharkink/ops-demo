@@ -24,11 +24,11 @@ log_file="$(mktemp)"
 trap 'rm -f "${log_file}"' EXIT
 
 echo "[ops-demo] Running bootstrap in VM..."
-vagrant ssh -c "cd /vagrant && ./scripts/bootstrap.sh" | tee "${log_file}"
+vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; cd /vagrant && ./scripts/bootstrap.sh" | tee "${log_file}"
 
 password="$(sed -n 's/.*ArgoCD admin-wachtwoord: //p' "${log_file}" | tail -n 1 | tr -d '\r')"
 if [[ -z "${password}" ]]; then
-  password="$(vagrant ssh -c "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d" 2>/dev/null | tr -d '\r')"
+  password="$(vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d" 2>/dev/null | tr -d '\r')"
 fi
 
 echo ""

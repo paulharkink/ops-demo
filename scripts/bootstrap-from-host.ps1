@@ -16,7 +16,7 @@ Write-Host '[ops-demo] Checking VM status...'
 Ensure-VagrantRunning
 
 Write-Host '[ops-demo] Running bootstrap in VM...'
-$output = vagrant ssh -c "cd /vagrant && ./scripts/bootstrap.sh" | Out-String
+$output = vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; cd /vagrant && ./scripts/bootstrap.sh" | Out-String
 Write-Host $output
 
 $password = $null
@@ -25,7 +25,7 @@ if ($output -match 'ArgoCD admin-wachtwoord:\s*(\S+)') {
 }
 
 if (-not $password) {
-  $fallback = vagrant ssh -c "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d" | Out-String
+  $fallback = vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d" | Out-String
   $password = $fallback.Trim()
 }
 
