@@ -1,164 +1,128 @@
-# VM Setup — Getting Started
+# VM-setup
 
-Everything runs inside a VirtualBox VM provisioned by Vagrant.
-This page walks you through starting the VM and verifying it is healthy before the workshop begins.
+Alles draait in een VirtualBox-VM die Vagrant voor je opzet. Volg deze stappen voordat je aan de oefeningen begint.
 
 ---
 
-## Requirements (install on your laptop before the workshop)
+## Wat je nodig hebt
 
-> **Do this the day before** — downloads can be slow on conference WiFi.
+Doe dit de dag ervoor — niet op de ochtend van de workshop zelf.
 
-| Tool | Version | Download |
-|------|---------|----------|
-| VirtualBox | 7.x | https://www.virtualbox.org/wiki/Downloads |
-| Vagrant | 2.4.x | https://developer.hashicorp.com/vagrant/downloads |
-| Git | any | https://git-scm.com/downloads |
+| Tool           | Versie      | Download |
+|----------------|-------------|----------|
+| VirtualBox     | 7.x         | https://www.virtualbox.org/wiki/Downloads |
+| Vagrant        | 2.4.x       | https://developer.hashicorp.com/vagrant/downloads |
+| Git            | willekeurig | https://git-scm.com/downloads |
 
-**RAM**: The VM uses 8 GB. Your laptop should have at least 12 GB total RAM free.
-**Disk**: ~15 GB free (Vagrant box ~1 GB + k3s images ~5 GB + workspace).
+Minimaal 12 GB vrij RAM, ~15 GB schijfruimte.
 
-> **Apple Silicon (M1/M2/M3/M4)**: VirtualBox 7.1+ supports Apple Silicon — make sure
-> to download the **"macOS / Apple Silicon hosts"** build from the VirtualBox download page,
-> not the Intel build.
+**Na installatie van VirtualBox: herstart je laptop.** VirtualBox installeert een kernel-extensie en die werkt pas na een reboot.
 
-### Verify your installs before continuing
+Snelle check — alle drie moeten een versie tonen:
 
 ```bash
-# All three must return a version number — if any fail, install it first
-VBoxManage --version   # e.g. 7.1.4r165100
-vagrant --version      # e.g. Vagrant 2.4.3
-git --version          # e.g. git version 2.x.x
+VBoxManage --version && vagrant --version && git --version
 ```
 
-If `VBoxManage` is not found after installing VirtualBox, reboot your laptop —
-VirtualBox installs a kernel extension that requires a restart.
-
 ---
 
-## Step 1 — Clone the repo
+## Stap 1 — Fork en clone de repo
+
+Fork de repo naar je eigen GitHub-account via https://github.com/paulharkink/ops-demo → **Fork**.
 
 ```bash
-git clone https://github.com/paulharkink/ops-demo.git
+git clone https://github.com/JOUW_USERNAME/ops-demo.git
 cd ops-demo
 ```
 
 ---
 
-## Step 2 — Start the VM
+## Stap 2 — VM opstarten
 
 ```bash
 vagrant up
 ```
 
-First run takes **10–15 minutes**: Vagrant downloads the Ubuntu 24.04 box, installs
-k3s, Helm, yq, and pre-pulls the workshop container images. Subsequent `vagrant up`
-calls start the existing VM in under a minute.
+De eerste keer duurt dit 10–15 minuten. Vagrant downloadt de Ubuntu 24.04 box, installeert k3s, Helm en yq, en haalt de workshop-images alvast op. Daarna start de VM in een paar seconden.
 
-You should see:
+Aan het einde zie je:
 ```
 ════════════════════════════════════════════════════════
   VM provisioned successfully!
-  SSH:       vagrant ssh
-  Next step: follow docs/vm-setup.md to verify, then
-             run scripts/bootstrap.sh to install ArgoCD
 ════════════════════════════════════════════════════════
 ```
 
 ---
 
-## Step 3 — SSH into the VM
+## Stap 3 — Inloggen
 
 ```bash
 vagrant ssh
+cd /vagrant
 ```
 
-You are now inside the VM. All workshop commands run here unless stated otherwise.
+Alle workshop-commando's voer je vanaf hier uit, tenzij anders aangegeven.
 
 ---
 
-## Step 4 — Verify the setup
+## Stap 4 — Controleer de setup
 
 ```bash
-# 1. k3s is running
 kubectl get nodes
 # NAME       STATUS   ROLES                  AGE   VERSION
 # ops-demo   Ready    control-plane,master   Xm    v1.31.x+k3s1
 
-# 2. Helm is available
 helm version
 # version.BuildInfo{Version:"v3.16.x", ...}
 
-# 3. The workshop repo is mounted at /vagrant
 ls /vagrant
-# apps/  docs/  manifests/  scripts/  Vagrantfile  README.md
-
-# 4. The host-only interface has the right IP
-ip addr show eth1
-# inet 192.168.56.10/24
+# Vagrantfile  README.md  apps/  docs/  manifests/  scripts/
 ```
 
 ---
 
-## Step 5 — Verify host connectivity
+## Stap 5 — Controleer bereikbaarheid vanaf je laptop
 
-From your **laptop** (not the VM), confirm you can reach the VM's host-only IP:
+Vanuit je laptop (niet de VM):
 
 ```bash
 ping 192.168.56.10
 ```
 
-If this times out, check your VirtualBox host-only network adapter:
+Werkt dit niet, controleer dan of de VirtualBox host-only adapter bestaat:
 
 ```bash
-# macOS/Linux
 VBoxManage list hostonlyifs
-# Should show vboxnet0 with IP 192.168.56.1
-
-# Windows
-VBoxManage list hostonlyifs
+# Verwacht: vboxnet0 met IP 192.168.56.1
 ```
 
-If no host-only adapter exists:
+Bestaat hij niet:
 ```bash
 VBoxManage hostonlyif create
 VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 ```
 
-Then re-run `vagrant up`.
+Dan `vagrant up` opnieuw.
 
 ---
 
-## Working directory
-
-Inside the VM, the repo is available at `/vagrant` (a VirtualBox shared folder).
-All workshop commands are run from `/vagrant`:
+## Handige Vagrant-commando's
 
 ```bash
-cd /vagrant
+vagrant halt       # afsluiten
+vagrant up         # opstarten
+vagrant suspend    # pauzeren
+vagrant resume     # hervatten
+vagrant destroy    # VM volledig verwijderen
 ```
 
 ---
 
-## Stopping and restarting the VM
+## Probleemoplossing
 
-```bash
-vagrant halt       # graceful shutdown (preserves state)
-vagrant up         # restart
-vagrant suspend    # pause (faster resume, uses disk space)
-vagrant resume     # resume from suspend
-vagrant destroy    # delete the VM entirely (start fresh)
-```
-
----
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---------|-----|
-| `vagrant up`: "No usable default provider" | VirtualBox is not installed — install it and reboot, then retry |
-| `vagrant up` fails: VT-x/AMD-V not enabled | Enable virtualisation in BIOS/UEFI settings |
-| `vagrant up` fails: port conflict | Another VM may be using the host-only range; stop it |
-| `kubectl get nodes` shows NotReady | k3s is still starting; wait 30–60 s |
-| `/vagrant` is empty inside VM | Shared folder issue; try `vagrant reload` |
-| Very slow image pulls | Images should be pre-pulled; if not, wait 5–10 min |
+| Symptoom | Oplossing |
+|----------|-----------|
+| "No usable default provider" | VirtualBox niet geïnstalleerd of laptop niet herstart |
+| VT-x/AMD-V niet beschikbaar | Schakel virtualisatie in via BIOS/UEFI |
+| `kubectl get nodes` → NotReady | k3s start nog op, wacht 30–60 seconden |
+| `/vagrant` is leeg | Shared folder probleem — probeer `vagrant reload` |

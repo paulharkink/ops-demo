@@ -1,17 +1,17 @@
-# Final Talk — GitOps in Practice
+# Final Talk — GitOps in de praktijk
 
-**Duration**: ~20 min + Q&A
-**Format**: Slides or whiteboard; optional live demo
+**Duur**: ~20 min + Q&A  
+**Format**: Slides of whiteboard, optioneel met live demo
 
 ---
 
-## 1. What We Built (7 min)
+## 1. Wat we gebouwd hebben (7 min)
 
-### Architecture diagram
+### Architectuurdiagram
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Your Laptop                                            │
+│  Jouw laptop                                            │
 │                                                         │
 │  Browser  ──────────────────────────────────────────►  │
 │           podinfo.192.168.56.200.nip.io                 │
@@ -25,13 +25,13 @@
 │                                                         │
 │  ┌──────────────────┐  ┌───────────────────────────┐   │
 │  │  Ingress-Nginx   │  │  ArgoCD                   │   │
-│  │  (LB: .200)      │  │  watches this Git repo    │   │
+│  │  (LB: .200)      │  │  kijkt naar deze Git repo │   │
 │  └──────┬───────────┘  └───────────┬───────────────┘   │
-│         │                          │ syncs              │
+│         │                          │ synct             │
 │         ▼                          ▼                    │
 │  ┌──────────────────┐  ┌───────────────────────────┐   │
 │  │  podinfo         │  │  MetalLB                  │   │
-│  │  (Deployment)    │  │  (assigns LAN IPs)        │   │
+│  │  (Deployment)    │  │  (geeft LAN IP's uit)     │   │
 │  └──────────────────┘  └───────────────────────────┘   │
 │                                                         │
 │  ┌──────────────────────────────────────────────────┐   │
@@ -41,63 +41,63 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-### The GitOps loop (narrate this)
+### De GitOps loop (vertel dit hardop)
 
-1. Everything in the cluster is defined in **this Git repo**
-2. ArgoCD watches the repo and reconciles the cluster to match
-3. The Tekton pipeline is itself deployed by ArgoCD — and it pushes commits that ArgoCD then syncs
-4. The only `kubectl apply` you ran today was: bootstrap ArgoCD + trigger PipelineRun
+1. Alles in de cluster staat als declaratie in deze Git repo
+2. ArgoCD kijkt naar de repo en reconcilet de cluster naar die gewenste state
+3. De Tekton pipeline wordt zelf ook door ArgoCD gedeployed, en pusht commits die ArgoCD daarna weer synct
+4. De enige `kubectl apply` die je vandaag deed: bootstrap van ArgoCD + PipelineRun triggeren
 
 ### Stack recap
 
-| Component | Role |
-|-----------|------|
+| Component | Rol |
+|-----------|-----|
 | k3s | Single-binary Kubernetes |
 | ArgoCD | GitOps engine (App-of-Apps) |
 | MetalLB | Bare-metal LoadBalancer |
-| Ingress-Nginx | HTTP routing by hostname |
+| Ingress-Nginx | HTTP routing op hostname |
 | Tekton | CI pipeline (in-cluster) |
-| podinfo | Demo application |
+| podinfo | Demo-applicatie |
 | kube-prometheus-stack | Observability (bonus) |
 
 ---
 
-## 2. Why GitOps in Production (8 min)
+## 2. Waarom GitOps in productie (8 min)
 
-### The old way: imperative deploys
+### De oude manier: imperatieve deploys
 
 ```bash
-# Someone runs this on a Friday afternoon
+# Iemand draait dit op vrijdagmiddag
 kubectl set image deployment/api api=company/api:v2.3.1-hotfix
-# No review. No audit trail. No way to know who ran it at 16:47.
+# Geen review. Geen audit trail. Niemand weet wie dit om 16:47 deed.
 ```
 
-### The GitOps way
+### De GitOps manier
 
 ```
-PR: "bump API to v2.3.1-hotfix"
+PR: "bump API naar v2.3.1-hotfix"
   → peer review
   → merge
-  → ArgoCD syncs
-  → deploy happens
-  → Git commit IS the audit trail
+  → ArgoCD synct
+  → deploy gebeurt
+  → Git commit IS de audit trail
 ```
 
-### Key benefits
+### Belangrijkste voordelen
 
-**Audit trail**: Every cluster change has a Git commit — who, what, when, why.
+**Audit trail**: Elke clusterwijziging heeft een Git commit: wie, wat, wanneer, waarom.
 
-**Drift detection**: If someone `kubectl apply`s directly, ArgoCD detects the drift and can auto-revert. The cluster always converges to what's in Git.
+**Drift detection**: Als iemand direct `kubectl apply` doet, ziet ArgoCD drift en kan het automatisch terugdraaien. De cluster convergeert altijd terug naar wat in Git staat.
 
-**Disaster recovery**: The cluster is destroyed? `vagrant up` + `./scripts/bootstrap.sh` + `kubectl apply -f apps/root.yaml` — and ArgoCD recreates everything. Git is the backup.
+**Disaster recovery**: Cluster weg? `vagrant up` + `./scripts/bootstrap.sh` + `kubectl apply -f apps/root.yaml` en ArgoCD bouwt alles opnieuw op. Git is je backup.
 
-**Multi-team collaboration**: Developers open PRs to deploy. Ops reviews the manifest changes. No SSH keys to production.
+**Samenwerking tussen teams**: Developers openen PR's voor deploys. Ops reviewt manifest-wijzigingen. Geen SSH-sleutels op productie nodig.
 
-**Rollback**: `git revert <commit>` + `git push`. No special tooling.
+**Rollback**: `git revert <commit>` + `git push`. Geen speciale tooling nodig.
 
-### The App-of-Apps pattern (brief)
+### Het App-of-Apps pattern (kort)
 
-One root Application manages all other Applications. Adding a new service = adding a single YAML file to `apps/`. The root app picks it up automatically.
+Eén root Application beheert alle andere Applications. Nieuwe service toevoegen = één YAML-file in `apps/` toevoegen. De root app pakt die automatisch op.
 
 ```
 apps/root.yaml  ──manages──►  apps/argocd.yaml
@@ -111,27 +111,27 @@ apps/root.yaml  ──manages──►  apps/argocd.yaml
 
 ---
 
-## 3. What's Next (5 min)
+## 3. Wat is de volgende stap (5 min)
 
 ### Secrets management
 
-Today: plain Kubernetes Secrets with GitHub PATs.
-Production: **Vault + external-secrets-operator**
+Vandaag: plain Kubernetes Secrets met GitHub PATs.  
+In productie: **Vault + external-secrets-operator**
 
 ```
 Vault (secret store)
-  → external-secrets-operator pulls secrets
-  → creates Kubernetes Secrets
-  → ArgoCD syncs everything else
+  → external-secrets-operator haalt secrets op
+  → maakt Kubernetes Secrets aan
+  → ArgoCD synct de rest
 ```
 
-### Multi-cluster with ApplicationSets
+### Multi-cluster met ApplicationSets
 
-Today: one cluster, one repo.
-Production: 10 clusters, one repo.
+Vandaag: één cluster, één repo.  
+In productie: 10 clusters, één repo.
 
 ```yaml
-# ArgoCD ApplicationSet: deploy podinfo to every cluster in a list
+# ArgoCD ApplicationSet: deploy podinfo naar elke cluster uit de lijst
 generators:
   - list:
       elements:
@@ -142,29 +142,29 @@ generators:
 
 ### Progressive delivery
 
-Today: rolling update (all-or-nothing).
-Production: **Argo Rollouts** with canary or blue/green strategies.
+Vandaag: rolling update (all-or-nothing).  
+In productie: **Argo Rollouts** met canary of blue/green.
 
 ```
-New version → 5% of traffic
-  → metrics look good → 20% → 50% → 100%
-  → metrics bad → auto-rollback
+Nieuwe versie → 5% van traffic
+  → metrics goed → 20% → 50% → 100%
+  → metrics slecht → auto-rollback
 ```
 
 ---
 
-## Optional live demo (~5 min)
+## Optionele live demo (~5 min)
 
-Make a one-line change to `manifests/apps/podinfo/deployment.yaml` (e.g. UI color),
-push to GitHub, click **Refresh** in ArgoCD, and show the pod restart and new UI.
+Doe een one-line wijziging in `manifests/apps/podinfo/deployment.yaml` (bijv. UI-kleur),
+push naar GitHub, klik **Refresh** in ArgoCD en laat pod restart + nieuwe UI zien.
 
-The audience has already done this — seeing it narrated makes the loop visceral.
+De groep heeft dit al gedaan, maar live verteld landt de GitOps loop beter.
 
 ---
 
-## Q&A prompts (if the room is quiet)
+## Q&A prompts (als het stil valt)
 
-- "How would you handle database migrations in a GitOps flow?"
-- "What happens if two people push to Git at the same time?"
-- "When is GitOps NOT the right tool?" (answer: local dev, scripts, one-off jobs)
-- "How do you keep secrets out of Git at scale?"
+- "Hoe pak je database migrations aan in een GitOps flow?"
+- "Wat gebeurt er als twee mensen tegelijk naar Git pushen?"
+- "Wanneer is GitOps NIET de juiste tool?" (antwoord: local dev, scripts, one-off jobs)
+- "Hoe houd je secrets op schaal uit Git?"

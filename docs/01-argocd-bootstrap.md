@@ -1,117 +1,151 @@
-# Exercise 01 — Bootstrap ArgoCD
+# Oefening 01 — ArgoCD bootstrappen
 
-**Time**: ~30 min
-**Goal**: Get ArgoCD running on your local k3s cluster and apply the App-of-Apps root application.
-
----
-
-## What you'll learn
-- How to install ArgoCD via Helm
-- The App-of-Apps pattern: one ArgoCD Application that manages all others
-- How ArgoCD watches a Git repository and syncs cluster state
+**Tijd**: ~30 minuten
+**Doel**: ArgoCD aan de praat krijgen op je cluster en de App-of-Apps opzetten.
 
 ---
 
-## Prerequisites
+## Wat je leert
 
-Make sure your VM is up and you are SSHed in:
+- ArgoCD installeren via Helm
+- Het App-of-Apps patroon: één ArgoCD Application die alle andere beheert
+- Hoe ArgoCD je Git-repo in de gaten houdt en de cluster-staat synchroniseert
+
+---
+
+## Vereisten
+
+De VM draait en je bent ingelogd:
 
 ```bash
-vagrant up        # first time takes ~10 min (downloads images)
 vagrant ssh
 cd /vagrant
-```
-
-Verify k3s is healthy:
-
-```bash
 kubectl get nodes
 # NAME       STATUS   ROLES                  AGE   VERSION
-# ops-demo   Ready    control-plane,master   Xm    v1.31.x+k3s1
+# ops-demo   Ready    control-plane,master   ...
 ```
 
 ---
 
-## Steps
+## Stappen
 
-### 1. Run the bootstrap script
+### 1. Bootstrap-script uitvoeren
 
 ```bash
 ./scripts/bootstrap.sh
 ```
 
-This script:
-1. Creates the `argocd` namespace
-2. Installs ArgoCD via Helm (chart 7.7.11 → ArgoCD v2.13.x)
-3. Applies `apps/project.yaml` — a permissive `AppProject` for all workshop apps
-4. Applies `apps/root.yaml` — the App-of-Apps entry point
+Het script doet het volgende:
+1. Detecteert de URL van jouw fork op basis van `git remote`
+2. Maakt de `argocd` namespace aan
+3. Installeert ArgoCD via Helm
+4. Past `apps/project.yaml` toe
+5. Genereert `apps/root.yaml` met jouw fork-URL en past het toe
 
-At the end it prints the admin password. **Copy it now.**
+Aan het einde zie je het admin-wachtwoord. **Kopieer het nu.**
 
 ---
 
-### 2. Open the ArgoCD UI
+### 2. ArgoCD UI openen
 
-In a second terminal on your laptop (not the VM), run:
+In een tweede terminal op je laptop:
 
 ```bash
-vagrant ssh -- -L 8080:localhost:8080 &
-# or, inside the VM:
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-Then open **https://localhost:8080** in your browser (accept the self-signed cert).
-
-Login: `admin` / `<password from script output>`
+Open **https://localhost:8080** (accepteer het self-signed certificaat).
+Login: `admin` / het wachtwoord uit de output van het script.
 
 ---
 
-### 3. Explore the root Application
+### 3. root.yaml committen en pushen
 
-In the ArgoCD UI you should see one application: **root**.
-
-- Click it. Notice it is syncing the `apps/` directory from this repo.
-- It found `apps/argocd.yaml` and `apps/project.yaml` and is managing them.
-- ArgoCD is now **self-managing** — any change you push to `apps/` will be picked up automatically.
+Het bootstrap-script heeft `apps/root.yaml` aangemaakt met jouw fork-URL. Dit bestand moet in je repo staan zodat ArgoCD het kan synchroniseren:
 
 ```bash
-# Confirm from the CLI too
+git add apps/root.yaml
+git commit -m "feat: add root app-of-apps"
+git push
+```
+
+---
+
+### 4. De root Application bekijken
+
+In de ArgoCD UI zie je nu de **root** application verschijnen. Klik erop.
+
+- Hij kijkt naar de `apps/` directory in jouw fork
+- Alles wat je daar commit, pikt ArgoCD automatisch op
+
+Controleer ook via de CLI:
+
+```bash
 kubectl get applications -n argocd
 ```
 
 ---
 
-### 4. Check the self-managing ArgoCD app
+### 5. ArgoCD zichzelf laten beheren (optioneel maar mooi)
 
-Click the **argocd** application in the UI. It should show **Synced / Healthy**.
+Maak `apps/argocd.yaml` aan:
 
-ArgoCD is now reconciling its own Helm release from Git. If you push a change to
-`manifests/argocd/values.yaml`, ArgoCD will apply it to itself.
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: workshop
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: "7.7.11"
+      helm:
+        valueFiles:
+          - $values/manifests/argocd/values.yaml
+    - repoURL: JOUW_FORK_URL
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+```
+
+Vervang `JOUW_FORK_URL` door jouw fork-URL (staat ook in `apps/root.yaml`). Commit en push — ArgoCD beheert zichzelf vanaf nu via Git.
 
 ---
 
-## Expected outcome
+## Verwacht resultaat
 
 ```
 NAME     SYNC STATUS   HEALTH STATUS
-argocd   Synced        Healthy
 root     Synced        Healthy
+argocd   Synced        Healthy
 ```
 
 ---
 
-## Troubleshooting
+## Probleemoplossing
 
-| Symptom | Fix |
-|---------|-----|
-| `kubectl get nodes` shows NotReady | Wait 30–60 s; k3s is starting |
-| Helm install fails with timeout | Run `kubectl get pods -n argocd` — if image pull is slow, wait |
-| UI shows "Unknown" sync status | Click **Refresh** on the application |
-| Port-forward drops | Re-run the `kubectl port-forward` command |
+| Symptoom | Oplossing |
+|----------|-----------|
+| root Application toont "Unknown" | Nog niet gepusht, of ArgoCD kan de repo nog niet bereiken — even wachten |
+| Helm install time-out | `kubectl get pods -n argocd` — waarschijnlijk nog images aan het downloaden |
+| UI toont "Unknown" sync status | Klik **Refresh** op de application |
 
 ---
 
-## What's next
+## Volgende stap
 
-In Exercise 02 you will deploy your first application — **podinfo** — purely through
-Git: no `kubectl apply`, just a YAML file committed to the repo.
+In Oefening 02 deploy je je eerste echte applicatie via GitOps — geen `kubectl apply`, alleen een YAML-bestand in Git.

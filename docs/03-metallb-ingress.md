@@ -1,109 +1,240 @@
-# Exercise 03 — MetalLB + Ingress-Nginx (LAN exposure)
+# Oefening 03 — MetalLB + Ingress-Nginx
 
-**Time**: ~45 min
-**Goal**: Expose podinfo and the ArgoCD UI on a real LAN IP — accessible from your laptop's browser without any port-forward.
-
----
-
-## What you'll learn
-- What MetalLB is and why you need it in a bare-metal / local Kubernetes cluster
-- How a LoadBalancer service gets a real IP via L2 ARP
-- How Ingress-Nginx routes HTTP traffic by hostname
-- `nip.io` — a public wildcard DNS service for local development
+**Tijd**: ~45 minuten
+**Doel**: podinfo en de ArgoCD UI bereikbaar maken op een echt LAN-IP — vanuit je browser op je laptop, zonder port-forward.
 
 ---
 
-## Background
+## Wat je leert
 
-In cloud Kubernetes (EKS, GKE, AKS), `type: LoadBalancer` automatically provisions a cloud load balancer with a public IP. On bare metal or local VMs, nothing does that — so pods stay unreachable.
-
-**MetalLB** fills that gap: it watches for `LoadBalancer` services and assigns IPs from a pool you define. In L2 mode it uses ARP to answer "who has 192.168.56.200?" — so your laptop routes directly to the VM.
-
-**Ingress-Nginx** is a single LoadBalancer service that MetalLB gives one IP. All your apps share that IP — Nginx routes to the right service based on the `Host:` header.
-
-**nip.io** is a public DNS wildcard: `anything.192.168.56.200.nip.io` resolves to `192.168.56.200`. No `/etc/hosts` editing needed.
+- Waarom je MetalLB nodig hebt op een bare-metal of lokaal Kubernetes-cluster
+- Hoe een LoadBalancer-service een echt IP krijgt via L2 ARP
+- Hoe Ingress-Nginx HTTP-verkeer routeert op basis van hostname
+- nip.io: gratis wildcard-DNS voor lokale development
 
 ---
 
-## Steps
+## Achtergrond
 
-### 1. Enable MetalLB
+In cloud-Kubernetes (EKS, GKE, AKS) regelt `type: LoadBalancer` automatisch een load balancer met een extern IP. Op bare metal of lokale VMs doet niets dat — pods blijven onbereikbaar van buitenaf.
 
-The ArgoCD Application manifests for MetalLB are already in this repo. The root
-App-of-Apps watches the `apps/` directory, which includes `apps/networking/`.
-They are already being applied — MetalLB just needs a moment to become healthy.
+**MetalLB** lost dit op: hij luistert naar LoadBalancer-services en kent IPs toe uit een pool die jij definieert. In L2-modus gebruikt hij ARP — jouw laptop vraagt "wie heeft 192.168.56.200?" en MetalLB antwoordt namens de VM.
 
-Check MetalLB is running:
+**Ingress-Nginx** is één LoadBalancer-service die van MetalLB één IP krijgt. Al je apps delen dat IP — Nginx routeert op basis van de `Host:` header.
 
-```bash
-kubectl get pods -n metallb-system
-# NAME                          READY   STATUS    RESTARTS   AGE
-# controller-xxx                1/1     Running   0          Xm
-# speaker-xxx                   1/1     Running   0          Xm
+**nip.io** is publieke wildcard-DNS: `iets.192.168.56.200.nip.io` resolvet altijd naar `192.168.56.200`. Geen `/etc/hosts` aanpassen.
+
+---
+
+## Stappen
+
+### 1. MetalLB installeren
+
+Maak de volgende bestanden aan:
+
+**`manifests/networking/metallb/values.yaml`**
+```yaml
+speaker:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
 ```
 
-Check the IP pool is configured:
+**`manifests/networking/metallb/metallb-config.yaml`**
+```yaml
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: workshop-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.56.200-192.168.56.220
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: workshop-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - workshop-pool
+```
 
-```bash
-kubectl get ipaddresspool -n metallb-system
-# NAME            AUTO ASSIGN   AVOID BUGGY IPS   ADDRESSES
-# workshop-pool   true          false             ["192.168.56.200-192.168.56.220"]
+**`apps/networking/metallb.yaml`**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metallb
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: workshop
+  sources:
+    - repoURL: https://metallb.github.io/metallb
+      chart: metallb
+      targetRevision: "0.14.9"
+      helm:
+        valueFiles:
+          - $values/manifests/networking/metallb/values.yaml
+    - repoURL: JOUW_FORK_URL
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: metallb-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+```
+
+**`apps/networking/metallb-config.yaml`**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metallb-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: workshop
+  source:
+    repoURL: JOUW_FORK_URL
+    targetRevision: HEAD
+    path: manifests/networking/metallb
+    directory:
+      include: "metallb-config.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: metallb-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
 ```
 
 ---
 
-### 2. Enable Ingress-Nginx
+### 2. Ingress-Nginx installeren
 
-Similarly, `apps/networking/ingress-nginx.yaml` is already in the repo. Wait for it
-to become Synced in ArgoCD, then:
+**`manifests/networking/ingress-nginx/values.yaml`**
+```yaml
+controller:
+  ingressClassResource:
+    name: nginx
+    default: true
+  service:
+    type: LoadBalancer
+    loadBalancerIP: "192.168.56.200"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+```
+
+**`apps/networking/ingress-nginx.yaml`**
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: workshop
+  sources:
+    - repoURL: https://kubernetes.github.io/ingress-nginx
+      chart: ingress-nginx
+      targetRevision: "4.12.0"
+      helm:
+        valueFiles:
+          - $values/manifests/networking/ingress-nginx/values.yaml
+    - repoURL: JOUW_FORK_URL
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-nginx
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+---
+
+### 3. Alles committen en pushen
+
+```bash
+git add apps/networking/ manifests/networking/
+git commit -m "feat: MetalLB + Ingress-Nginx"
+git push
+```
+
+Wacht tot beide applications Synced zijn, en controleer dan:
 
 ```bash
 kubectl get svc -n ingress-nginx
-# NAME                                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)
-# ingress-nginx-controller             LoadBalancer   10.43.x.x      192.168.56.200   80:xxx,443:xxx
+# NAME                       TYPE           EXTERNAL-IP      PORT(S)
+# ingress-nginx-controller   LoadBalancer   192.168.56.200   80:xxx,443:xxx
 ```
 
-The `EXTERNAL-IP` column shows `192.168.56.200`. MetalLB assigned it.
-
-From your **laptop** (not the VM), verify:
-
+Vanuit je laptop:
 ```bash
 curl http://192.168.56.200
-# 404 from Nginx — correct! No ingress rule yet, but Nginx is reachable.
+# 404 van Nginx — klopt, nog geen Ingress-regel
 ```
 
 ---
 
-### 3. Add a podinfo Ingress
+### 4. Ingress voor podinfo toevoegen
 
-The Ingress resource is already in `manifests/apps/podinfo/ingress.yaml`.
-ArgoCD will sync it automatically. After sync:
+**`manifests/apps/podinfo/ingress.yaml`**
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: podinfo
+  namespace: podinfo
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: podinfo.192.168.56.200.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: podinfo
+                port:
+                  name: http
+```
 
 ```bash
-kubectl get ingress -n podinfo
-# NAME      CLASS   HOSTS                              ADDRESS          PORTS
-# podinfo   nginx   podinfo.192.168.56.200.nip.io      192.168.56.200   80
+git add manifests/apps/podinfo/ingress.yaml
+git commit -m "feat: voeg podinfo Ingress toe"
+git push
 ```
 
-Open from your **laptop browser**: **http://podinfo.192.168.56.200.nip.io**
-
-You should see the podinfo UI with version 6.6.2.
+Open vanuit je laptop: **http://podinfo.192.168.56.200.nip.io**
 
 ---
 
-### 4. Enable the ArgoCD ingress
+### 5. ArgoCD-ingress inschakelen
 
-Now let's expose ArgoCD itself on a nice URL. Open `manifests/argocd/values.yaml`
-and find the commented-out ingress block near the `server:` section:
-
-```yaml
-  # ── Exercise 03: uncomment this block after Ingress-Nginx is deployed ──────
-  # ingress:
-  #   enabled: true
-  # ...
-```
-
-Uncomment the entire block (remove the `#` characters):
+Pas `manifests/argocd/values.yaml` aan. Zoek het uitgecommentarieerde ingress-blok en verwijder de `#`-tekens:
 
 ```yaml
   ingress:
@@ -115,52 +246,39 @@ Uncomment the entire block (remove the `#` characters):
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 ```
 
-Commit and push:
-
 ```bash
 git add manifests/argocd/values.yaml
-git commit -m "feat(ex03): enable ArgoCD ingress"
+git commit -m "feat: schakel ArgoCD ingress in"
 git push
 ```
 
-ArgoCD will detect the change, upgrade its own Helm release, and create the Ingress.
-Within a minute or two:
-
-```bash
-kubectl get ingress -n argocd
-# NAME            CLASS   HOSTS                              ADDRESS
-# argocd-server   nginx   argocd.192.168.56.200.nip.io      192.168.56.200
-```
-
-Open from your laptop: **http://argocd.192.168.56.200.nip.io**
+ArgoCD detecteert de wijziging, past zijn eigen Helm-release aan en maakt de Ingress aan.
+Open: **http://argocd.192.168.56.200.nip.io**
 
 ---
 
-## Expected outcome
+## Verwacht resultaat
 
 | URL | App |
 |-----|-----|
 | http://podinfo.192.168.56.200.nip.io | podinfo v6.6.2 |
 | http://argocd.192.168.56.200.nip.io  | ArgoCD UI |
 
-Both accessible from your laptop without any port-forward.
+Beide bereikbaar vanaf je laptop zonder port-forward.
 
 ---
 
-## Troubleshooting
+## Probleemoplossing
 
-| Symptom | Fix |
-|---------|-----|
-| `EXTERNAL-IP` is `<pending>` on ingress-nginx svc | MetalLB not ready yet — check `kubectl get pods -n metallb-system` |
-| Curl to 192.168.56.200 times out from laptop | VirtualBox host-only adapter not configured; check `VBoxManage list hostonlyifs` |
-| `nip.io` doesn't resolve | Temporary DNS issue; try again or use `/etc/hosts` with `192.168.56.200 podinfo.local` |
-| ArgoCD ingress gives 502 | Wait for ArgoCD to restart after values change; ArgoCD now runs in insecure (HTTP) mode |
+| Symptoom | Oplossing |
+|----------|-----------|
+| `EXTERNAL-IP` blijft `<pending>` | MetalLB is nog niet klaar — check `kubectl get pods -n metallb-system` |
+| curl naar 192.168.56.200 time-out | VirtualBox host-only adapter niet geconfigureerd — zie vm-setup.md |
+| nip.io resolvet niet | Tijdelijk DNS-probleem, probeer opnieuw of voeg toe aan `/etc/hosts` |
+| ArgoCD ingress geeft 502 | Wacht tot ArgoCD herstart na de values-wijziging |
 
 ---
 
-## What's next
+## Volgende stap
 
-In Exercise 04 you'll build a Tekton pipeline that:
-1. Validates manifests
-2. Bumps the podinfo image tag from `6.6.2` to `6.7.0` in `deployment.yaml`
-3. Pushes the commit — and ArgoCD picks it up automatically
+In Oefening 04 bouw je een Tekton-pipeline die automatisch de image-tag in Git aanpast, pusht, en laat ArgoCD de update uitrollen.
