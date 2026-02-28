@@ -58,6 +58,7 @@ http://localhost:8080
 ```
 
 Volg daarna de oefeningen in volgorde. Zie [docs/vm-setup.md](docs/vm-setup.md) als er iets misgaat bij de VM.
+Deze quickstart voert bootstrap al uit. In Oefening 01 kun je dan direct door naar verificatie en commit/push van `apps/root.yaml`.
 
 Belangrijk:
 - Je hoeft het VM-IP niet te weten om in te loggen of te tunnelen; gebruik `vagrant ssh`.
@@ -107,6 +108,30 @@ naar jouw eigen branch om precies te zien wat er mist.
 | `solution/04-tekton-pipeline`  | Volledige GitOps CI-loop            |
 | `solution/05-app-upgrade`      | podinfo op v6.7.0                   |
 | `solution/06-monitoring`       | Prometheus + Grafana actief         |
+
+---
+
+## Troubleshooting
+
+| Probleem                                                       | Oplossing                                                                                                                                                                                          |
+|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `A VirtualBox machine with the name 'ops-demo' already exists` | Je hebt waarschijnlijk twee repo-kopieen met dezelfde VM-naam. Check `vagrant global-status --prune`. Stop of destroy de andere omgeving, of geef een unieke VM-naam in een van de `Vagrantfile`s. |
+| `vagrant up` faalt terwijl `vagrant status` zegt `poweroff`    | Je zit mogelijk in een andere repo-map dan de VM die nu draait. Controleer de `directory` kolom in `vagrant global-status --prune`.                                                                |
+| Ik weet het ArgoCD admin-wachtwoord niet (meer)                | Lees het opnieuw uit: `vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' \| base64 -d"`        |
+| Ik kan niet inloggen met `vagrant ssh`                         | Controleer eerst of je in de juiste repo-map staat (`pwd`) en run `vagrant status`. Als de VM niet draait: `vagrant up`. Helpt dat niet: `vagrant global-status --prune` en check de `directory`.  |
+| ArgoCD UI niet bereikbaar op `http://localhost:8080`           | Start de tunnel opnieuw: `./scripts/host/argocd-ui-tunnel.sh` (of `.ps1` op Windows).                                                                                                               |
+| `kubectl` lijkt naar de verkeerde cluster te wijzen            | Gebruik de host-scripts (`./scripts/host/bootstrap-from-host.sh` en `./scripts/host/argocd-ui-tunnel.sh`) of log in met `vagrant ssh` en werk vanuit `/vagrant`. De bootstrap heeft cluster-checks en stopt bij mismatch. |
+| `root` app blijft `Unknown` of `OutOfSync`                     | Controleer of `apps/root.yaml` naar jouw fork verwijst en of je die commit/push hebt gedaan. Daarna in ArgoCD op **Refresh** klikken.                                                              |
+| Tekton pipeline kan niet pushen naar GitHub                    | Controleer credentials opnieuw met `./scripts/vm/set-git-credentials.sh <github-user> <github-pat>` en gebruik een PAT met juiste repo-rechten.                                                     |
+| MetalLB/Ingress hostnames werken niet                          | Wacht tot networking apps `Healthy` zijn in ArgoCD en controleer of het host-only netwerk `192.168.56.x` actief is.                                                                                |
+
+Handige debug-commando's:
+```bash
+vagrant global-status --prune
+vagrant status
+kubectl get applications -n argocd
+kubectl get pods -A
+```
 
 ---
 

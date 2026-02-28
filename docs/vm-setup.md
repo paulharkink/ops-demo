@@ -8,11 +8,11 @@ Alles draait in een VirtualBox-VM die Vagrant voor je opzet. Volg deze stappen v
 
 Doe dit de dag ervoor — niet op de ochtend van de workshop zelf.
 
-| Tool           | Versie      | Download |
-|----------------|-------------|----------|
-| VirtualBox     | 7.x         | https://www.virtualbox.org/wiki/Downloads |
-| Vagrant        | 2.4.x       | https://developer.hashicorp.com/vagrant/downloads |
-| Git            | willekeurig | https://git-scm.com/downloads |
+| Tool       | Versie      | Download                                          | Of op Mac                 |
+|------------|-------------|---------------------------------------------------|---------------------------|
+| VirtualBox | 7.x         | https://www.virtualbox.org/wiki/Downloads         | `brew install virtualbox` |
+| Vagrant    | 2.4.x       | https://developer.hashicorp.com/vagrant/downloads | `brew install vagrant`    |
+| Git        | willekeurig | https://git-scm.com/downloads                     |                           |
 
 Minimaal 12 GB vrij RAM, ~15 GB schijfruimte.
 
@@ -120,9 +120,9 @@ vagrant destroy    # VM volledig verwijderen
 
 ## Probleemoplossing
 
-| Symptoom | Oplossing |
-|----------|-----------|
-| "No usable default provider" | VirtualBox niet geïnstalleerd of laptop niet herstart |
-| VT-x/AMD-V niet beschikbaar | Schakel virtualisatie in via BIOS/UEFI |
-| `kubectl get nodes` → NotReady | k3s start nog op, wacht 30–60 seconden |
-| `/vagrant` is leeg | Shared folder probleem — probeer `vagrant reload` |
+| Symptoom                       | Oplossing                                             |
+|--------------------------------|-------------------------------------------------------|
+| "No usable default provider"   | VirtualBox niet geïnstalleerd of laptop niet herstart |
+| VT-x/AMD-V niet beschikbaar    | Schakel virtualisatie in via BIOS/UEFI                |
+| `kubectl get nodes` → NotReady | k3s start nog op, wacht 30–60 seconden                |
+| `/vagrant` is leeg             | Shared folder probleem — probeer `vagrant reload`     |
