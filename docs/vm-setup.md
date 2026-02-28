@@ -7,6 +7,8 @@ This page walks you through starting the VM and verifying it is healthy before t
 
 ## Requirements (install on your laptop before the workshop)
 
+> **Do this the day before** — downloads can be slow on conference WiFi.
+
 | Tool | Version | Download |
 |------|---------|----------|
 | VirtualBox | 7.x | https://www.virtualbox.org/wiki/Downloads |
@@ -16,12 +18,28 @@ This page walks you through starting the VM and verifying it is healthy before t
 **RAM**: The VM uses 8 GB. Your laptop should have at least 12 GB total RAM free.
 **Disk**: ~15 GB free (Vagrant box ~1 GB + k3s images ~5 GB + workspace).
 
+> **Apple Silicon (M1/M2/M3/M4)**: VirtualBox 7.1+ supports Apple Silicon — make sure
+> to download the **"macOS / Apple Silicon hosts"** build from the VirtualBox download page,
+> not the Intel build.
+
+### Verify your installs before continuing
+
+```bash
+# All three must return a version number — if any fail, install it first
+VBoxManage --version   # e.g. 7.1.4r165100
+vagrant --version      # e.g. Vagrant 2.4.3
+git --version          # e.g. git version 2.x.x
+```
+
+If `VBoxManage` is not found after installing VirtualBox, reboot your laptop —
+VirtualBox installs a kernel extension that requires a restart.
+
 ---
 
 ## Step 1 — Clone the repo
 
 ```bash
-git clone https://github.com/innspire/ops-demo.git
+git clone https://github.com/paulharkink/ops-demo.git
 cd ops-demo
 ```
 
@@ -138,6 +156,7 @@ vagrant destroy    # delete the VM entirely (start fresh)
 
 | Symptom | Fix |
 |---------|-----|
+| `vagrant up`: "No usable default provider" | VirtualBox is not installed — install it and reboot, then retry |
 | `vagrant up` fails: VT-x/AMD-V not enabled | Enable virtualisation in BIOS/UEFI settings |
 | `vagrant up` fails: port conflict | Another VM may be using the host-only range; stop it |
 | `kubectl get nodes` shows NotReady | k3s is still starting; wait 30–60 s |

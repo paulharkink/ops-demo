@@ -13,7 +13,7 @@ spec:
     - name: repo-url
       type: string
       description: URL of the ops-demo git repository
-      default: https://github.com/innspire/ops-demo.git
+      default: https://github.com/paulharkink/ops-demo.git
     - name: new-tag
       type: string
       description: New podinfo image tag to set (e.g. 6.7.0)

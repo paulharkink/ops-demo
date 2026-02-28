@@ -8,7 +8,7 @@ metadata:
 spec:
   project: workshop
   source:
-    repoURL: https://github.com/innspire/ops-demo.git
+    repoURL: https://github.com/paulharkink/ops-demo.git
     targetRevision: HEAD
     path: manifests/apps/podinfo
   destination:

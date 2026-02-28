@@ -14,7 +14,7 @@ spec:
       helm:
         valueFiles:
           - $values/manifests/networking/ingress-nginx/values.yaml
-    - repoURL: https://github.com/innspire/ops-demo.git
+    - repoURL: https://github.com/paulharkink/ops-demo.git
       targetRevision: HEAD
       ref: values
   destination:
