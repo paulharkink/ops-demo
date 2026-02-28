@@ -6,6 +6,7 @@ port-forward.
 
 ---
 
+
 ## Wat je leert
 
 - Waarom je MetalLB nodig hebt op een bare-metal of lokaal Kubernetes-cluster
@@ -39,6 +40,17 @@ Maak de volgende bestanden aan:
 
 **`manifests/networking/metallb/values.yaml`**
 
+Wat dit doet:
+- Configureert de MetalLB speaker pod.
+- Met deze `toleration` mag de speaker op de control-plane node draaien.
+- Dat is nodig in deze workshop, omdat je VM meestal maar 1 node heeft.
+
+Termen uitgelegd:
+- `speaker`: de MetalLB component die op nodes draait en op het netwerk "antwoordt" voor een toegewezen
+  LoadBalancer-IP (in L2-modus via ARP).
+- `tolerations`: een Kubernetes-mechanisme waarmee een pod tóch op een node mag landen die een `taint` heeft.
+  Control-plane nodes zijn vaak getaint met `NoSchedule`; zonder toleration wordt de speaker daar niet ingepland.
+
 ```yaml
 speaker:
   tolerations:
@@ -48,6 +60,11 @@ speaker:
 ```
 
 **`manifests/networking/metallb/metallb-config.yaml`**
+
+Wat dit doet:
+- `IPAddressPool` bepaalt uit welke range MetalLB IP's mag uitdelen.
+- `L2Advertisement` maakt die pool zichtbaar op je host-only netwerk via ARP.
+- Daardoor kan je laptop services op dat IP direct bereiken.
 
 ```yaml
 apiVersion: metallb.io/v1beta1
@@ -70,6 +87,12 @@ spec:
 ```
 
 **`apps/networking/metallb.yaml`**
+
+Wat dit doet:
+- Installeert MetalLB via ArgoCD als aparte `Application`.
+- De chart komt van de upstream Helm repo; jouw repo levert de values via `$values/...`.
+- `sync-wave: "1"` zorgt dat MetalLB eerst klaar is.
+- `ignoreDifferences` voorkomt bekende CRD `caBundle` drift door dynamische webhook certs.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -110,6 +133,11 @@ spec:
 
 **`apps/networking/metallb-config.yaml`**
 
+Wat dit doet:
+- Past jouw IP-pool/L2-config toe als losse ArgoCD `Application`.
+- Die split houdt "installatie" en "runtime-config" van MetalLB uit elkaar.
+- `sync-wave: "2"` laat dit pas lopen nadat MetalLB zelf staat.
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -141,6 +169,11 @@ spec:
 
 **`manifests/networking/ingress-nginx/values.yaml`**
 
+Wat dit doet:
+- Zet ingress-nginx neer met een `LoadBalancer` service.
+- Dat service-IP wordt vast op `192.168.56.200` gezet.
+- Zo kun je stabiele hostnames gebruiken met `nip.io`.
+
 ```yaml
 controller:
   ingressClassResource:
@@ -156,6 +189,11 @@ controller:
 ```
 
 **`apps/networking/ingress-nginx.yaml`**
+
+Wat dit doet:
+- Installeert ingress-nginx via ArgoCD.
+- Ook hier: chart upstream, values uit jouw repo.
+- `sync-wave: "3"` laat ingress pas starten nadat MetalLB + config klaar zijn.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -192,32 +230,40 @@ spec:
 
 ### 3. Alles committen en pushen
 
-```bash
-git add apps/networking/ manifests/networking/
-git commit -m "feat: MetalLB + Ingress-Nginx"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/networking/ manifests/networking/
+> git commit -m "feat: MetalLB + Ingress-Nginx"
+> git push
+> ```
 
 Wacht tot beide applications Synced zijn, en controleer dan:
 
-```bash
-kubectl get svc -n ingress-nginx
-# NAME                       TYPE           EXTERNAL-IP      PORT(S)
-# ingress-nginx-controller   LoadBalancer   192.168.56.200   80:xxx,443:xxx
-```
+> **VM**
+> ```bash
+> kubectl get svc -n ingress-nginx
+> # NAME                       TYPE           EXTERNAL-IP      PORT(S)
+> # ingress-nginx-controller   LoadBalancer   192.168.56.200   80:xxx,443:xxx
+> ```
 
 Vanuit je laptop:
 
-```bash
-curl http://192.168.56.200
-# 404 van Nginx — klopt, nog geen Ingress-regel
-```
+> **HOST**
+> ```bash
+> curl http://192.168.56.200
+> # 404 van Nginx — klopt, nog geen Ingress-regel
+> ```
 
 ---
 
 ### 4. Ingress voor podinfo toevoegen
 
 **`manifests/apps/podinfo/ingress.yaml`**
+
+Wat dit doet:
+- Definieert de HTTP-route voor podinfo.
+- `ingressClassName: nginx` bindt deze Ingress aan ingress-nginx.
+- De hostnaam met `nip.io` wijst naar jouw MetalLB IP.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -240,11 +286,12 @@ spec:
                   name: http
 ```
 
-```bash
-git add manifests/apps/podinfo/ingress.yaml
-git commit -m "feat: voeg podinfo Ingress toe"
-git push
-```
+> **HOST**
+> ```bash
+> git add manifests/apps/podinfo/ingress.yaml
+> git commit -m "feat: voeg podinfo Ingress toe"
+> git push
+> ```
 
 Open vanuit je laptop: **http://podinfo.192.168.56.200.nip.io**
 
@@ -253,6 +300,11 @@ Open vanuit je laptop: **http://podinfo.192.168.56.200.nip.io**
 ### 5. ArgoCD-ingress inschakelen
 
 Pas `manifests/argocd/values.yaml` aan. Zoek het uitgecommentarieerde ingress-blok en verwijder de `#`-tekens:
+
+Wat dit doet:
+- Schakelt ingress in voor de ArgoCD server zelf.
+- Daarna kun je ArgoCD via browser-URL gebruiken in plaats van port-forward.
+- De `hostname` moet matchen met het IP dat ingress-nginx exposeert.
 
 ```yaml
   ingress:
@@ -264,11 +316,12 @@ Pas `manifests/argocd/values.yaml` aan. Zoek het uitgecommentarieerde ingress-bl
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 ```
 
-```bash
-git add manifests/argocd/values.yaml
-git commit -m "feat: schakel ArgoCD ingress in"
-git push
-```
+> **HOST**
+> ```bash
+> git add manifests/argocd/values.yaml
+> git commit -m "feat: schakel ArgoCD ingress in"
+> git push
+> ```
 
 ArgoCD detecteert de wijziging, past zijn eigen Helm-release aan en maakt de Ingress aan.
 Open: **http://argocd.192.168.56.200.nip.io**

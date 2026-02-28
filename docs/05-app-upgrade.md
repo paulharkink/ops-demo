@@ -5,6 +5,7 @@
 
 ---
 
+
 ## Wat je gebouwd hebt
 
 ```
@@ -53,28 +54,31 @@ Tekton PipelineRun
 
 Als de pipeline podinfo al naar `6.7.0` heeft gebracht, probeer dan een handmatige downgrade:
 
-```bash
-# Pas de image-tag terug aan naar 6.6.2
-vim manifests/apps/podinfo/deployment.yaml
-
-git add manifests/apps/podinfo/deployment.yaml
-git commit -m "chore: downgrade podinfo naar 6.6.2"
-git push
-```
+> **HOST**
+> ```bash
+> # Pas de image-tag terug aan naar 6.6.2
+> vim manifests/apps/podinfo/deployment.yaml
+>
+> git add manifests/apps/podinfo/deployment.yaml
+> git commit -m "chore: downgrade podinfo naar 6.6.2"
+> git push
+> ```
 
 Kijk hoe ArgoCD synchroniseert, en verifieer:
 
-```bash
-curl http://podinfo.192.168.56.200.nip.io | jq .version
-# "6.6.2"
-```
+> **HOST**
+> ```bash
+> curl http://podinfo.192.168.56.200.nip.io | jq .version
+> # "6.6.2"
+> ```
 
 En upgrade dan weer via de pipeline:
 
-```bash
-kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
-kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
-```
+> **VM**
+> ```bash
+> kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
+> kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
+> ```
 
 ---
 
@@ -82,10 +86,11 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 
 ArgoCD heeft `selfHeal: true` — hij draait handmatige cluster-wijzigingen automatisch terug.
 
-```bash
-# Wijzig de image-tag direct in de cluster (buiten Git om)
-kubectl set image deployment/podinfo podinfo=ghcr.io/stefanprodan/podinfo:6.5.0 -n podinfo
-```
+> **VM**
+> ```bash
+> # Wijzig de image-tag direct in de cluster (buiten Git om)
+> kubectl set image deployment/podinfo podinfo=ghcr.io/stefanprodan/podinfo:6.5.0 -n podinfo
+> ```
 
 Kijk in de ArgoCD UI — binnen seconden gaat de podinfo-app op **OutOfSync**, en daarna zet ArgoCD hem terug naar wat er
 in Git staat.

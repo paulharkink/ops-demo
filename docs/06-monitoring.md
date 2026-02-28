@@ -5,6 +5,7 @@
 
 ---
 
+
 ## Wat je leert
 
 - Hoe je een complexe multi-component stack (kube-prometheus-stack) puur via GitOps deployet
@@ -109,11 +110,12 @@ spec:
       - ServerSideApply=true
 ```
 
-```bash
-git add apps/monitoring/ manifests/monitoring/
-git commit -m "feat: Prometheus + Grafana via kube-prometheus-stack"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/monitoring/ manifests/monitoring/
+> git commit -m "feat: Prometheus + Grafana via kube-prometheus-stack"
+> git push
+> ```
 
 De initiële sync duurt 5–8 minuten — de chart is groot en installeert veel CRDs.
 
@@ -121,17 +123,19 @@ De initiële sync duurt 5–8 minuten — de chart is groot en installeert veel 
 
 ### 2. Wachten tot de stack klaar is
 
-```bash
-kubectl get pods -n monitoring -w
-```
+> **VM**
+> ```bash
+> kubectl get pods -n monitoring -w
+> ```
 
 Zodra alles Running is:
 
-```bash
-kubectl get ingress -n monitoring
-# NAME      HOSTS                              ADDRESS
-# grafana   grafana.192.168.56.200.nip.io      192.168.56.200
-```
+> **VM**
+> ```bash
+> kubectl get ingress -n monitoring
+> # NAME      HOSTS                              ADDRESS
+> # grafana   grafana.192.168.56.200.nip.io      192.168.56.200
+> ```
 
 ---
 
@@ -159,10 +163,11 @@ Interessant voor deze workshop:
 
 ### 5. Load genereren op podinfo
 
-```bash
-# In de VM
-while true; do curl -s http://podinfo.192.168.56.200.nip.io > /dev/null; sleep 0.2; done
-```
+> **VM**
+> ```bash
+> # In de VM
+> while true; do curl -s http://podinfo.192.168.56.200.nip.io > /dev/null; sleep 0.2; done
+> ```
 
 Open in Grafana: **Kubernetes / Compute Resources / Namespace (Pods)** → namespace `podinfo`.
 Je ziet het CPU-gebruik stijgen.
@@ -173,15 +178,16 @@ Je ziet het CPU-gebruik stijgen.
 
 Probeer het Grafana-wachtwoord aan te passen:
 
-```bash
-vim manifests/monitoring/values.yaml
-# Verander: adminPassword: workshop123
-# Naar:     adminPassword: nieuwwachtwoord
-
-git add manifests/monitoring/values.yaml
-git commit -m "chore: pas Grafana-wachtwoord aan"
-git push
-```
+> **HOST**
+> ```bash
+> vim manifests/monitoring/values.yaml
+> # Verander: adminPassword: workshop123
+> # Naar:     adminPassword: nieuwwachtwoord
+>
+> git add manifests/monitoring/values.yaml
+> git commit -m "chore: pas Grafana-wachtwoord aan"
+> git push
+> ```
 
 ArgoCD synchroniseert de Helm-release en Grafana herstart. Log daarna in met het nieuwe wachtwoord.
 

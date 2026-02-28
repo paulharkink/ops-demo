@@ -21,9 +21,10 @@ een reboot.
 
 Snelle check — alle drie moeten een versie tonen:
 
-```bash
-VBoxManage --version && vagrant --version && git --version
-```
+> **VM**
+> ```bash
+> VBoxManage --version && vagrant --version && git --version
+> ```
 
 ---
 
@@ -31,18 +32,20 @@ VBoxManage --version && vagrant --version && git --version
 
 Fork de repo naar je eigen GitHub-account via https://github.com/paulharkink/ops-demo → **Fork**.
 
-```bash
-git clone https://github.com/JOUW_USERNAME/ops-demo.git
-cd ops-demo
-```
+> **HOST**
+> ```bash
+> git clone https://github.com/JOUW_USERNAME/ops-demo.git
+> cd ops-demo
+> ```
 
 ---
 
 ## Stap 2 — VM opstarten
 
-```bash
-vagrant up
-```
+> **VM**
+> ```bash
+> vagrant up
+> ```
 
 De eerste keer duurt dit 10–15 minuten. Vagrant downloadt de Ubuntu 24.04 box, installeert k3s, Helm en yq, en haalt de
 workshop-images alvast op. Daarna start de VM in een paar seconden.
@@ -59,10 +62,11 @@ Aan het einde zie je:
 
 ## Stap 3 — Inloggen
 
-```bash
-vagrant ssh
-cd /vagrant
-```
+> **HOST**
+> ```bash
+> vagrant ssh
+> cd /vagrant
+> ```
 
 Alle workshop-commando's voer je vanaf hier uit, tenzij anders aangegeven.
 
@@ -70,17 +74,18 @@ Alle workshop-commando's voer je vanaf hier uit, tenzij anders aangegeven.
 
 ## Stap 4 — Controleer de setup
 
-```bash
-kubectl get nodes
-# NAME       STATUS   ROLES                  AGE   VERSION
-# ops-demo   Ready    control-plane,master   Xm    v1.31.x+k3s1
-
-helm version
-# version.BuildInfo{Version:"v3.16.x", ...}
-
-ls /vagrant
-# Vagrantfile  README.md  apps/  docs/  manifests/  scripts/
-```
+> **VM**
+> ```bash
+> kubectl get nodes
+> # NAME       STATUS   ROLES                  AGE   VERSION
+> # ops-demo   Ready    control-plane,master   Xm    v1.31.x+k3s1
+>
+> helm version
+> # version.BuildInfo{Version:"v3.16.x", ...}
+>
+> ls /vagrant
+> # Vagrantfile  README.md  apps/  docs/  manifests/  scripts/
+> ```
 
 ---
 
@@ -88,23 +93,26 @@ ls /vagrant
 
 Vanuit je laptop (niet de VM):
 
-```bash
-ping 192.168.56.10
-```
+> **VM**
+> ```bash
+> ping 192.168.56.10
+> ```
 
 Werkt dit niet, controleer dan of de VirtualBox host-only adapter bestaat:
 
-```bash
-VBoxManage list hostonlyifs
-# Verwacht: vboxnet0 met IP 192.168.56.1
-```
+> **VM**
+> ```bash
+> VBoxManage list hostonlyifs
+> # Verwacht: vboxnet0 met IP 192.168.56.1
+> ```
 
 Bestaat hij niet:
 
-```bash
-VBoxManage hostonlyif create
-VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
-```
+> **VM**
+> ```bash
+> VBoxManage hostonlyif create
+> VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+> ```
 
 Dan `vagrant up` opnieuw.
 
@@ -112,13 +120,14 @@ Dan `vagrant up` opnieuw.
 
 ## Handige Vagrant-commando's
 
-```bash
-vagrant halt       # afsluiten
-vagrant up         # opstarten
-vagrant suspend    # pauzeren
-vagrant resume     # hervatten
-vagrant destroy    # VM volledig verwijderen
-```
+> **VM**
+> ```bash
+> vagrant halt       # afsluiten
+> vagrant up         # opstarten
+> vagrant suspend    # pauzeren
+> vagrant resume     # hervatten
+> vagrant destroy    # VM volledig verwijderen
+> ```
 
 ---
 

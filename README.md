@@ -17,9 +17,10 @@ Je hebt drie dingen nodig op je laptop. Installeer ze de dag van tevoren — nie
 
 Minimaal 12 GB vrij RAM en ~15 GB schijfruimte. Snelle check:
 
-```bash
-VBoxManage --version && vagrant --version && git --version
-```
+> **VM**
+> ```bash
+> VBoxManage --version && vagrant --version && git --version
+> ```
 
 Als één van de drie niets teruggeeft: installeren en opnieuw proberen.
 
@@ -32,35 +33,41 @@ kun je zelf pushen zonder dat je toegang nodig hebt tot de originele repo.
 
 1. Clone je fork op je host-machine.
 
-```bash
-git clone https://github.com/JOUW_USERNAME/ops-demo.git && cd ops-demo
-```
+> **HOST**
+> ```bash
+> git clone https://github.com/JOUW_USERNAME/ops-demo.git && cd ops-demo
+> ```
 
 2. Start de VM.
 
-```bash
-vagrant up
-```
+> **VM**
+> ```bash
+> vagrant up
+> ```
 
 3. Run bootstrap vanaf je host (script voert bootstrap in de VM uit).
 
-```bash
-./scripts/host/bootstrap-from-host.sh
-```
+> **HOST**
+> ```bash
+> ./scripts/host/bootstrap-from-host.sh
+> ```
 
-```powershell
-./scripts/host/bootstrap-from-host.ps1
-```
+> **HOST**
+> ```powershell
+> ./scripts/host/bootstrap-from-host.ps1
+> ```
 
 4. Open ArgoCD UI via tunnel.
 
-```bash
-./scripts/host/argocd-ui-tunnel.sh
-```
+> **HOST**
+> ```bash
+> ./scripts/host/argocd-ui-tunnel.sh
+> ```
 
-```powershell
-./scripts/host/argocd-ui-tunnel.ps1
-```
+> **HOST**
+> ```powershell
+> ./scripts/host/argocd-ui-tunnel.ps1
+> ```
 
 5. Open in je browser:
 
@@ -111,8 +118,9 @@ Beginners: focus op 01–03 (~1u45m). De rest: probeer 01–05 te halen.
 
 ## Vastgelopen?
 
-Elke solution branch is cumulatief — hij bevat alles t/m die oefening. Je kunt een PR openen van een solution branch
-naar jouw eigen branch om precies te zien wat er mist.
+Elke solution branch is standalone per oefening (niet cumulatief).
+Je kunt een PR openen van een solution branch naar jouw eigen branch
+om precies te zien wat er in die specifieke oefening mist.
 
 | Branch                         | Bevat                               |
 |--------------------------------|-------------------------------------|
@@ -136,17 +144,18 @@ naar jouw eigen branch om precies te zien wat er mist.
 | ArgoCD UI niet bereikbaar op `http://localhost:8080`           | Start de tunnel opnieuw: `./scripts/host/argocd-ui-tunnel.sh` (of `.ps1` op Windows).                                                                                                                                     |
 | `kubectl` lijkt naar de verkeerde cluster te wijzen            | Gebruik de host-scripts (`./scripts/host/bootstrap-from-host.sh` en `./scripts/host/argocd-ui-tunnel.sh`) of log in met `vagrant ssh` en werk vanuit `/vagrant`. De bootstrap heeft cluster-checks en stopt bij mismatch. |
 | `root` app blijft `Unknown` of `OutOfSync`                     | Controleer of `apps/root.yaml` naar jouw fork verwijst en of je die commit/push hebt gedaan. Daarna in ArgoCD op **Refresh** klikken.                                                                                     |
-| Tekton pipeline kan niet pushen naar GitHub                    | Controleer credentials opnieuw met `./scripts/vm/set-git-credentials.sh <github-user> <github-pat>` en gebruik een PAT met juiste repo-rechten.                                                                           |
+| Tekton pipeline kan niet pushen naar GitHub                    | Zet credentials opnieuw: in VM `./scripts/vm/set-git-credentials.sh <github-user> <github-pat>` (na `vagrant ssh` + `cd /vagrant`) of vanaf host `vagrant ssh -c "/vagrant/scripts/vm/set-git-credentials.sh <github-user> <github-pat>"`. Gebruik een PAT met juiste repo-rechten. |
 | MetalLB/Ingress hostnames werken niet                          | Wacht tot networking apps `Healthy` zijn in ArgoCD en controleer of het host-only netwerk `192.168.56.x` actief is.                                                                                                       |
 
 Handige debug-commando's:
 
-```bash
-vagrant global-status --prune
-vagrant status
-kubectl get applications -n argocd
-kubectl get pods -A
-```
+> **VM**
+> ```bash
+> vagrant global-status --prune
+> vagrant status
+> kubectl get applications -n argocd
+> kubectl get pods -A
+> ```
 
 ---
 

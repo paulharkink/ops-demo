@@ -6,6 +6,7 @@ volledige GitOps CI/CD-loop.
 
 ---
 
+
 ## Wat je leert
 
 - Tekton-concepten: Task, Pipeline, PipelineRun, Workspace
@@ -86,19 +87,21 @@ spec:
       - ServerSideApply=true
 ```
 
-```bash
-git add apps/ci/tekton.yaml manifests/ci/tekton/
-git commit -m "feat: installeer Tekton via ArgoCD"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/ci/tekton.yaml manifests/ci/tekton/
+> git commit -m "feat: installeer Tekton via ArgoCD"
+> git push
+> ```
 
 Wacht tot Tekton draait (~3–5 minuten):
 
-```bash
-kubectl get pods -n tekton-pipelines
-# tekton-pipelines-controller-xxx   1/1   Running
-# tekton-pipelines-webhook-xxx      1/1   Running
-```
+> **VM**
+> ```bash
+> kubectl get pods -n tekton-pipelines
+> # tekton-pipelines-controller-xxx   1/1   Running
+> # tekton-pipelines-webhook-xxx      1/1   Running
+> ```
 
 ---
 
@@ -117,9 +120,10 @@ metadata:
 **`manifests/ci/pipeline/pipeline.yaml`** — zie de solution branch voor de volledige inhoud, of kopieer uit
 `reference-solution`:
 
-```bash
-git show origin/solution/04-tekton-pipeline:manifests/ci/pipeline/pipeline.yaml
-```
+> **HOST**
+> ```bash
+> git show origin/solution/04-tekton-pipeline:manifests/ci/pipeline/pipeline.yaml
+> ```
 
 **`manifests/ci/pipeline/pipelinerun.yaml`**
 
@@ -185,11 +189,12 @@ spec:
       - CreateNamespace=true
 ```
 
-```bash
-git add apps/ci/pipeline.yaml manifests/ci/pipeline/
-git commit -m "feat: voeg pipeline-resources toe"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/ci/pipeline.yaml manifests/ci/pipeline/
+> git commit -m "feat: voeg pipeline-resources toe"
+> git push
+> ```
 
 ---
 
@@ -255,11 +260,12 @@ spec:
       - CreateNamespace=true
 ```
 
-```bash
-git add apps/ci/tekton-dashboard.yaml manifests/ci/dashboard/
-git commit -m "feat: voeg Tekton Dashboard met ingress toe"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/ci/tekton-dashboard.yaml manifests/ci/dashboard/
+> git commit -m "feat: voeg Tekton Dashboard met ingress toe"
+> git push
+> ```
 
 Open daarna: **http://tekton.192.168.56.200.nip.io**
 
@@ -271,13 +277,14 @@ Dit is een verplichte stap vóór je de PipelineRun triggert.
 Zonder `git-credentials` secret faalt de `clone` task direct.
 
 De pipeline moet kunnen pushen naar jouw fork.
-Maak een GitHub PAT aan met `repo`-scope en voer dan uit:
+Maak een GitHub PAT aan met `repo`-scope en voer daarna een van deze opties uit:
 
-```bash
-./scripts/vm/set-git-credentials.sh <jouw-github-gebruikersnaam> <jouw-pat>
-```
+> **VM**
+> ```bash
+> /vagrant/scripts/vm/set-git-credentials.sh <jouw-github-gebruikersnaam> <jouw-pat>
+> ```
 
-Dit maakt een Kubernetes Secret aan in de cluster — **het PAT komt niet in Git**.
+Dit maakt een Kubernetes Secret aan in het cluster — **het PAT komt niet in Git**.
 
 ---
 
@@ -286,21 +293,24 @@ Dit maakt een Kubernetes Secret aan in de cluster — **het PAT komt niet in Git
 Controleer eerst dat stap 3 gelukt is.
 Pas daarna de PipelineRun starten:
 
-```bash
-kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
-```
+> **VM**
+> ```bash
+> kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
+> ```
 
 Volg de voortgang:
 
-```bash
-kubectl get pipelinerun -n tekton-pipelines -w
-```
+> **VM**
+> ```bash
+> kubectl get pipelinerun -n tekton-pipelines -w
+> ```
 
 Of per pod:
 
-```bash
-kubectl get pods -n tekton-pipelines -w
-```
+> **VM**
+> ```bash
+> kubectl get pods -n tekton-pipelines -w
+> ```
 
 De PipelineRun duurt ~2–3 minuten.
 
@@ -308,11 +318,12 @@ De PipelineRun duurt ~2–3 minuten.
 
 ### 6. Controleer de commit
 
-```bash
-git fetch origin
-git log origin/main --oneline -3
-# Je ziet: chore(pipeline): bump podinfo to 6.7.0
-```
+> **HOST**
+> ```bash
+> git fetch origin
+> git log origin/main --oneline -3
+> # Je ziet: chore(pipeline): bump podinfo to 6.7.0
+> ```
 
 ---
 
@@ -320,9 +331,10 @@ git log origin/main --oneline -3
 
 Klik **Refresh** op de **podinfo** application in ArgoCD, of wacht op het automatische poll-interval.
 
-```bash
-kubectl rollout status deployment/podinfo -n podinfo
-```
+> **VM**
+> ```bash
+> kubectl rollout status deployment/podinfo -n podinfo
+> ```
 
 ---
 
@@ -330,10 +342,11 @@ kubectl rollout status deployment/podinfo -n podinfo
 
 Open **http://podinfo.192.168.56.200.nip.io** — je ziet nu versie **6.7.0**.
 
-```bash
-curl http://podinfo.192.168.56.200.nip.io | jq .version
-# "6.7.0"
-```
+> **HOST**
+> ```bash
+> curl http://podinfo.192.168.56.200.nip.io | jq .version
+> # "6.7.0"
+> ```
 
 ---
 
@@ -341,10 +354,11 @@ curl http://podinfo.192.168.56.200.nip.io | jq .version
 
 De naam van een PipelineRun moet uniek zijn:
 
-```bash
-kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
-kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
-```
+> **VM**
+> ```bash
+> kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
+> kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
+> ```
 
 ---
 
@@ -353,7 +367,7 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 | Symptoom                                | Oplossing                                                                                              |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------|
 | PipelineRun blijft "Running"            | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670`                                 |
-| Secret `git-credentials` niet gevonden  | Voer `./scripts/vm/set-git-credentials.sh` uit                                                         |
+| Secret `git-credentials` niet gevonden  | Run in VM: `./scripts/vm/set-git-credentials.sh ...` (na `vagrant ssh` + `cd /vagrant`) of vanaf host: `vagrant ssh -c \"/vagrant/scripts/vm/set-git-credentials.sh ...\"` |
 | Push mislukt: 403 Forbidden             | PAT heeft onvoldoende rechten — `repo`-scope vereist                                                   |
 | ArgoCD synchroniseert niet              | Klik **Refresh** in de UI                                                                              |
 | `root` blijft OutOfSync op app `tekton` | Verwijder de lege `kustomize: {}` uit `apps/ci/tekton.yaml` (Argo normaliseert deze weg in live state) |

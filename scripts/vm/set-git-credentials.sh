@@ -19,6 +19,15 @@ fi
 GITHUB_USER="$1"
 GITHUB_PAT="$2"
 NAMESPACE="tekton-pipelines"
+PIPELINERUN_REL="manifests/ci/pipeline/pipelinerun.yaml"
+if [[ -f "${PIPELINERUN_REL}" ]]; then
+  PIPELINERUN_PATH="${PIPELINERUN_REL}"
+elif [[ -f "/vagrant/${PIPELINERUN_REL}" ]]; then
+  PIPELINERUN_PATH="/vagrant/${PIPELINERUN_REL}"
+else
+  # Fallback if workshop repo is in a custom location.
+  PIPELINERUN_PATH="${PIPELINERUN_REL}"
+fi
 
 echo "→ Creating git-credentials Secret in namespace ${NAMESPACE}"
 
@@ -31,7 +40,7 @@ kubectl create secret generic git-credentials \
 echo "✓ Secret created. The pipeline is ready to run."
 echo ""
 echo "  Trigger the pipeline:"
-echo "    kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml"
+echo "    kubectl apply -f ${PIPELINERUN_PATH}"
 echo ""
 echo "  Watch progress:"
 echo "    kubectl get pipelinerun -n tekton-pipelines -w"

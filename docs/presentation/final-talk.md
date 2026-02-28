@@ -66,11 +66,12 @@
 
 ### De oude manier: imperatieve deploys
 
-```bash
-# Iemand draait dit op vrijdagmiddag
-kubectl set image deployment/api api=company/api:v2.3.1-hotfix
-# Geen review. Geen audit trail. Niemand weet wie dit om 16:47 deed.
-```
+> **VM**
+> ```bash
+> # Iemand draait dit op vrijdagmiddag
+> kubectl set image deployment/api api=company/api:v2.3.1-hotfix
+> # Geen review. Geen audit trail. Niemand weet wie dit om 16:47 deed.
+> ```
 
 ### De GitOps manier
 

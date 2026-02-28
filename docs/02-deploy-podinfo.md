@@ -5,6 +5,7 @@
 
 ---
 
+
 ## Wat je leert
 
 - Hoe je een ArgoCD Application toevoegt door één bestand te committen
@@ -136,11 +137,12 @@ Vervang `JOUW_FORK_URL` door jouw fork-URL.
 
 ### 3. Committen en pushen
 
-```bash
-git add apps/apps/podinfo.yaml manifests/apps/podinfo/
-git commit -m "feat: deploy podinfo via GitOps"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/apps/podinfo.yaml manifests/apps/podinfo/
+> git commit -m "feat: deploy podinfo via GitOps"
+> git push
+> ```
 
 Dit is de enige actie die nodig is om de applicatie te deployen.
 
@@ -151,32 +153,36 @@ Dit is de enige actie die nodig is om de applicatie te deployen.
 
 ### 4. Wachten tot het Synced is
 
-```bash
-kubectl get application podinfo -n argocd -w
-```
+> **VM**
+> ```bash
+> kubectl get application podinfo -n argocd -w
+> ```
 
 Wacht tot je `Synced` en `Healthy` ziet. Dan:
 
-```bash
-kubectl get pods -n podinfo
-# NAME                     READY   STATUS    RESTARTS   AGE
-# podinfo-xxx-xxx          1/1     Running   0          30s
-```
+> **VM**
+> ```bash
+> kubectl get pods -n podinfo
+> # NAME                     READY   STATUS    RESTARTS   AGE
+> # podinfo-xxx-xxx          1/1     Running   0          30s
+> ```
 
 ---
 
 ### 5. Controleer dat de app werkt
 
-```bash
-kubectl port-forward svc/podinfo -n podinfo 9898:80
-```
+> **VM**
+> ```bash
+> kubectl port-forward svc/podinfo -n podinfo 9898:80
+> ```
 
 In een ander terminal (of via curl):
 
-```bash
-curl http://localhost:9898
-# {"hostname":"podinfo-xxx","version":"6.6.2", ...}
-```
+> **HOST**
+> ```bash
+> curl http://localhost:9898
+> # {"hostname":"podinfo-xxx","version":"6.6.2", ...}
+> ```
 
 Versie `6.6.2` — dat klopt met de image-tag in `deployment.yaml`.
 
@@ -200,11 +206,12 @@ value: "#2ecc71"
 
 Commit en push:
 
-```bash
-git add manifests/apps/podinfo/deployment.yaml
-git commit -m "chore: verander podinfo UI-kleur"
-git push
-```
+> **HOST**
+> ```bash
+> git add manifests/apps/podinfo/deployment.yaml
+> git commit -m "chore: verander podinfo UI-kleur"
+> git push
+> ```
 
 Binnen ~3 minuten (standaard poll-interval van ArgoCD) herstart de pod
 en zie je de nieuwe kleur. Je kunt ook op **Refresh** klikken in de UI

@@ -5,6 +5,7 @@
 
 ---
 
+
 ## Wat je leert
 
 - ArgoCD installeren via Helm
@@ -17,13 +18,12 @@
 
 De VM draait en je bent ingelogd:
 
-```bash
-vagrant ssh
-cd /vagrant
-kubectl get nodes
-# NAME       STATUS   ROLES                  AGE   VERSION
-# ops-demo   Ready    control-plane,master   ...
-```
+> **VM**
+> ```bash
+> kubectl get nodes
+> # NAME       STATUS   ROLES                  AGE   VERSION
+> # ops-demo   Ready    control-plane,master   ...
+> ```
 
 ---
 
@@ -37,9 +37,21 @@ Ga in dat geval direct naar stap 3.
 
 Wil je vanaf een blanke VM starten, voer dan bootstrap handmatig uit in de VM:
 
-```bash
-./scripts/vm/bootstrap.sh
-```
+> **VM**
+> ```bash
+> ./scripts/vm/bootstrap.sh
+> ```
+
+> **HOST: Mac**
+> ```bash
+> ./scripts/host/bootstrap-from-host.sh
+> ```
+
+> **HOST: Windows**
+> ```powershell
+> ./scripts/host/bootstrap-from-host.ps1
+> ```
+
 
 Het script doet het volgende:
 
@@ -57,9 +69,10 @@ Aan het einde zie je het admin-wachtwoord. **Kopieer het nu.**
 
 Op je laptop:
 
-```bash
-./scripts/host/argocd-ui-tunnel.sh
-```
+> **HOST**
+> ```bash
+> ./scripts/host/argocd-ui-tunnel.sh
+> ```
 
 Open **http://localhost:8080**.
 Login: `admin` / het wachtwoord uit de output van het script.
@@ -138,11 +151,12 @@ Gebruik hier dus `workshop` als projectwaarde.
 Het bootstrap-script heeft `apps/root.yaml` aangemaakt met jouw fork-URL.
 Dit bestand moet in je repo staan zodat ArgoCD het kan synchroniseren:
 
-```bash
-git add apps/root.yaml
-git commit -m "feat: add root app-of-apps"
-git push
-```
+> **HOST**
+> ```bash
+> git add apps/root.yaml
+> git commit -m "feat: add root app-of-apps"
+> git push
+> ```
 
 ---
 
@@ -155,9 +169,10 @@ In de ArgoCD UI zie je nu de **root** application verschijnen. Klik erop.
 
 Controleer ook via de CLI:
 
-```bash
-kubectl get applications -n argocd
-```
+> **VM**
+> ```bash
+> kubectl get applications -n argocd
+> ```
 
 ---
 
