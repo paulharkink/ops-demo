@@ -52,6 +52,7 @@ $provision = <<-SHELL
   # Point server to host-only IP so it works outside the VM too
   sed -i "s|127.0.0.1|#{HOST_ONLY_IP}|g" /home/vagrant/.kube/config
   chown -R vagrant:vagrant /home/vagrant/.kube
+  chmod 600 /home/vagrant/.kube/config
 
   # Also export KUBECONFIG in .bashrc
   echo 'export KUBECONFIG=/home/vagrant/.kube/config' >> /home/vagrant/.bashrc
