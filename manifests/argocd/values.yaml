@@ -1,0 +1,48 @@
+# ArgoCD Helm values for the workshop
+# Phase 1: insecure mode + port-forward access only
+# Phase 3: ingress added (see comment below)
+
+global:
+  nodeSelector: {}
+
+server:
+  # Run in insecure mode (no TLS on the server itself).
+  # TLS termination is handled by Ingress-Nginx in Exercise 03.
+  extraArgs:
+    - --insecure
+
+  # ── Exercise 03: uncomment this block after Ingress-Nginx is deployed ──────
+  # ingress:
+  #   enabled: true
+  #   ingressClassName: nginx
+  #   hostname: argocd.192.168.56.200.nip.io
+  #   annotations:
+  #     nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+  #     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  # ──────────────────────────────────────────────────────────────────────────
+
+configs:
+  params:
+    server.insecure: true
+
+  cm:
+    # Allow the root app to manage itself
+    application.resourceTrackingMethod: annotation
+
+repoServer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+applicationSet:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+notifications:
+  enabled: false
+
+dex:
+  enabled: false

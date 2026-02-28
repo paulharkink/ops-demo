@@ -1,0 +1,7 @@
+# AI session / planning files — local only, not for participants
+
+# Vagrant
+.vagrant/
+
+# macOS
+.DS_Store
