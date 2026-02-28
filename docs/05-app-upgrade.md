@@ -87,25 +87,27 @@ ArgoCD heeft `selfHeal: true` — hij draait handmatige cluster-wijzigingen auto
 kubectl set image deployment/podinfo podinfo=ghcr.io/stefanprodan/podinfo:6.5.0 -n podinfo
 ```
 
-Kijk in de ArgoCD UI — binnen seconden gaat de podinfo-app op **OutOfSync**, en daarna zet ArgoCD hem terug naar wat er in Git staat.
+Kijk in de ArgoCD UI — binnen seconden gaat de podinfo-app op **OutOfSync**, en daarna zet ArgoCD hem terug naar wat er
+in Git staat.
 
 ---
 
 ## Samenvatting
 
-| Component     | Rol                  | Hoe gedeployed     |
-|---------------|----------------------|--------------------|
-| k3s           | Kubernetes           | Vagrantfile        |
-| ArgoCD        | GitOps engine        | bootstrap.sh       |
-| MetalLB       | LoadBalancer IPs     | ArgoCD             |
-| Ingress-Nginx | HTTP-routing         | ArgoCD             |
-| podinfo       | Demo-applicatie      | ArgoCD             |
-| Tekton        | CI-pipeline          | ArgoCD             |
+| Component     | Rol              | Hoe gedeployed |
+|---------------|------------------|----------------|
+| k3s           | Kubernetes       | Vagrantfile    |
+| ArgoCD        | GitOps engine    | bootstrap.sh   |
+| MetalLB       | LoadBalancer IPs | ArgoCD         |
+| Ingress-Nginx | HTTP-routing     | ArgoCD         |
+| podinfo       | Demo-applicatie  | ArgoCD         |
+| Tekton        | CI-pipeline      | ArgoCD         |
 
 ---
 
 ## Volgende stap
 
-Als je nog tijd hebt: **Oefening 06 (bonus)** — Prometheus + Grafana deployen en cluster-metrics bekijken in een live dashboard.
+Als je nog tijd hebt: **Oefening 06 (bonus)** — Prometheus + Grafana deployen en cluster-metrics bekijken in een live
+dashboard.
 
 Anders: sluit af met de **presentatie** over GitOps in productie.

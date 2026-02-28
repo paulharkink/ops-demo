@@ -17,7 +17,8 @@
 
 Oefeningen 01–03 afgerond. Ingress-Nginx draait en nip.io-URLs zijn bereikbaar vanaf je laptop.
 
-> De monitoring-stack gebruikt extra ~700 MB geheugen. Op een 8 GB VM werkt het, maar kan wat traag aanvoelen. Als het te zwaar wordt, kun je `alertmanager` uitschakelen in de values.
+> De monitoring-stack gebruikt extra ~700 MB geheugen. Op een 8 GB VM werkt het, maar kan wat traag aanvoelen.
+> Als het te zwaar wordt, kun je `alertmanager` uitschakelen in de values.
 
 ---
 
@@ -26,6 +27,7 @@ Oefeningen 01–03 afgerond. Ingress-Nginx draait en nip.io-URLs zijn bereikbaar
 ### 1. Monitoring-Application aanmaken
 
 **`manifests/monitoring/values.yaml`**
+
 ```yaml
 grafana:
   adminPassword: workshop123
@@ -52,7 +54,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          accessModes: [ReadWriteOnce]
+          accessModes: [ ReadWriteOnce ]
           resources:
             requests:
               storage: 2Gi
@@ -74,6 +76,7 @@ nodeExporter:
 ```
 
 **`apps/monitoring/prometheus-grafana.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -146,11 +149,11 @@ kube-prometheus-stack levert kant-en-klare dashboards mee. In de Grafana-sidebar
 
 Interessant voor deze workshop:
 
-| Dashboard | Wat je ziet |
-|-----------|-------------|
+| Dashboard                                         | Wat je ziet                                      |
+|---------------------------------------------------|--------------------------------------------------|
 | Kubernetes / Compute Resources / Namespace (Pods) | CPU + geheugen per pod in de `podinfo` namespace |
-| Kubernetes / Compute Resources / Node (Pods) | Overzicht op node-niveau |
-| Node Exporter / Full | VM-niveau: CPU, geheugen, schijf, netwerk |
+| Kubernetes / Compute Resources / Node (Pods)      | Overzicht op node-niveau                         |
+| Node Exporter / Full                              | VM-niveau: CPU, geheugen, schijf, netwerk        |
 
 ---
 
@@ -161,7 +164,8 @@ Interessant voor deze workshop:
 while true; do curl -s http://podinfo.192.168.56.200.nip.io > /dev/null; sleep 0.2; done
 ```
 
-Open in Grafana: **Kubernetes / Compute Resources / Namespace (Pods)** → namespace `podinfo`. Je ziet het CPU-gebruik stijgen.
+Open in Grafana: **Kubernetes / Compute Resources / Namespace (Pods)** → namespace `podinfo`.
+Je ziet het CPU-gebruik stijgen.
 
 ---
 
@@ -185,9 +189,9 @@ ArgoCD synchroniseert de Helm-release en Grafana herstart. Log daarna in met het
 
 ## Probleemoplossing
 
-| Symptoom | Oplossing |
-|----------|-----------|
-| Pods in Pending | VM heeft te weinig geheugen — `kubectl describe pod` voor details |
-| Grafana 502 van Nginx | Pod is nog niet klaar, even wachten |
-| Geen data in dashboards | Prometheus heeft ~2 minuten nodig voor de eerste scrape |
-| CRD-conflict bij sync | Eerste sync installeert CRDs, tweede sync past resources toe — opnieuw proberen |
+| Symptoom                | Oplossing                                                                       |
+|-------------------------|---------------------------------------------------------------------------------|
+| Pods in Pending         | VM heeft te weinig geheugen — `kubectl describe pod` voor details               |
+| Grafana 502 van Nginx   | Pod is nog niet klaar, even wachten                                             |
+| Geen data in dashboards | Prometheus heeft ~2 minuten nodig voor de eerste scrape                         |
+| CRD-conflict bij sync   | Eerste sync installeert CRDs, tweede sync past resources toe — opnieuw proberen |

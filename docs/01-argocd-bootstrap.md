@@ -31,7 +31,8 @@ kubectl get nodes
 
 ### 1. Startpunt kiezen
 
-Als je de quickstart uit `README.md` al hebt gedaan (`./scripts/host/bootstrap-from-host.sh`), dan is bootstrap al uitgevoerd.
+Als je de quickstart uit `README.md` al hebt gedaan
+(`./scripts/host/bootstrap-from-host.sh`), dan is bootstrap al uitgevoerd.
 Ga in dat geval direct naar stap 3.
 
 Wil je vanaf een blanke VM starten, voer dan bootstrap handmatig uit in de VM:
@@ -41,6 +42,7 @@ Wil je vanaf een blanke VM starten, voer dan bootstrap handmatig uit in de VM:
 ```
 
 Het script doet het volgende:
+
 1. Detecteert de URL van jouw fork op basis van `git remote`
 2. Maakt de `argocd` namespace aan
 3. Installeert ArgoCD via Helm
@@ -72,6 +74,7 @@ Daarom moet je in deze stap expliciet je repo toevoegen, anders blijft `root` op
 Kies een van deze twee paden:
 
 **Pad A — via ArgoCD UI**
+
 - Ga naar **Settings → Repositories → Connect Repo**
 - Vul je repo-URL in
 - Auth type: username + password (bij HTTPS)
@@ -80,42 +83,48 @@ Kies een van deze twee paden:
 - Project: `workshop`
 
 **Pad B — via Kubernetes Secret (zonder UI)**
+
 - Maak een Secret in namespace `argocd`
 - Label op die Secret: `argocd.argoproj.io/secret-type=repository`
 - Secret-data met minimaal:
-  - `type: git`
-  - `url: <jouw-repo-url>`
-  - `username: <jouw-github-user>`
-  - `password: <jouw-github-pat>`
-  - `project: workshop`
+    - `type: git`
+    - `url: <jouw-repo-url>`
+    - `username: <jouw-github-user>`
+    - `password: <jouw-github-pat>`
+    - `project: workshop`
 
 `<jouw-repo-url>` kan technisch HTTPS of SSH zijn, maar:
+
 - Gebruik je een **GitHub PAT** (fine-grained of classic), dan gebruik je een **HTTPS repo-URL**:
-  - `https://github.com/<user>/<repo>.git`
+    - `https://github.com/<user>/<repo>.git`
 - Gebruik je een **SSH repo-URL**:
-  - `git@github.com:<user>/<repo>.git`
-  - dan authenticate je met een SSH key (niet met PAT).
+    - `git@github.com:<user>/<repo>.git`
+    - dan authenticate je met een SSH key (niet met PAT).
 
 #### Token/credentials kiezen
+
 Gebruik credentials die read-toegang geven tot je Git-repo.
 
 Als je **GitHub** gebruikt:
+
 1. Ga naar **Settings → Developer settings → [Personal access tokens](https://github.com/settings/tokens)**
 2. Maak bij voorkeur een **fine-grained token**
 3. Geef de token toegang tot jouw workshop-repo
 4. Zet minimaal repository permission:
-   - `Contents: Read`
+    - `Contents: Read`
 
 Dit is voldoende voor ArgoCD sync (read-only).  
 Gebruik je later Tekton om te pushen, dan heb je `Contents: Read and write` nodig.
 
 Bij HTTPS + PAT geldt:
+
 - `username` = je accountnaam op je Git-provider (bij GitHub: je GitHub username, niet je e-mailadres)
 - `password` = de PAT zelf
 
 Een classic token kan ook, met scope `repo`, maar fine-grained heeft de voorkeur.
 
 #### Wat is “Project” in ArgoCD?
+
 Een ArgoCD Project (AppProject) bepaalt welke repos en destinations een set Applications mag gebruiken.
 In deze workshop is dat project `workshop` (zie `apps/project.yaml`).
 
@@ -126,7 +135,8 @@ Gebruik hier dus `workshop` als projectwaarde.
 
 ### 4. root.yaml committen en pushen
 
-Het bootstrap-script heeft `apps/root.yaml` aangemaakt met jouw fork-URL. Dit bestand moet in je repo staan zodat ArgoCD het kan synchroniseren:
+Het bootstrap-script heeft `apps/root.yaml` aangemaakt met jouw fork-URL.
+Dit bestand moet in je repo staan zodat ArgoCD het kan synchroniseren:
 
 ```bash
 git add apps/root.yaml
@@ -187,7 +197,8 @@ spec:
       - ServerSideApply=true
 ```
 
-Vervang `JOUW_FORK_URL` door jouw fork-URL (staat ook in `apps/root.yaml`). Commit en push — ArgoCD beheert zichzelf vanaf nu via Git.
+Vervang `JOUW_FORK_URL` door jouw fork-URL (staat ook in `apps/root.yaml`).
+Commit en push: ArgoCD beheert zichzelf vanaf nu via Git.
 
 ---
 

@@ -1,7 +1,8 @@
 # Oefening 04 — Tekton Pipeline
 
 **Tijd**: ~45 minuten
-**Doel**: Een pipeline bouwen die automatisch de image-tag in Git aanpast en ArgoCD de update laat uitrollen — de volledige GitOps CI/CD-loop.
+**Doel**: Een pipeline bouwen die automatisch de image-tag in Git aanpast en ArgoCD de update laat uitrollen — de
+volledige GitOps CI/CD-loop.
 
 ---
 
@@ -41,6 +42,7 @@ Rolling update → podinfo v6.7.0 in je browser
 Oefeningen 01–03 afgerond. podinfo is bereikbaar via **http://podinfo.192.168.56.200.nip.io** en toont versie **6.6.2**.
 
 Je hebt nodig:
+
 - Een GitHub Personal Access Token (PAT) met **repo**-scope (lezen + schrijven)
 
 ---
@@ -50,12 +52,14 @@ Je hebt nodig:
 ### 1. Tekton installeren via ArgoCD
 
 **`manifests/ci/tekton/kustomization.yaml`**
+
 ```yaml
 resources:
   - https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.65.1/release.yaml
 ```
 
 **`apps/ci/tekton.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -70,7 +74,7 @@ spec:
     repoURL: JOUW_FORK_URL
     targetRevision: HEAD
     path: manifests/ci/tekton
-    kustomize: {}
+    kustomize: { }
   destination:
     server: https://kubernetes.default.svc
     namespace: tekton-pipelines
@@ -102,6 +106,7 @@ kubectl get pods -n tekton-pipelines
 ### 2. Pipeline-resources aanmaken
 
 **`manifests/ci/pipeline/serviceaccount.yaml`**
+
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -110,13 +115,15 @@ metadata:
   namespace: tekton-pipelines
 ```
 
-**`manifests/ci/pipeline/pipeline.yaml`** — zie de solution branch voor de volledige inhoud, of kopieer uit `reference-solution`:
+**`manifests/ci/pipeline/pipeline.yaml`** — zie de solution branch voor de volledige inhoud, of kopieer uit
+`reference-solution`:
 
 ```bash
 git show origin/solution/04-tekton-pipeline:manifests/ci/pipeline/pipeline.yaml
 ```
 
 **`manifests/ci/pipeline/pipelinerun.yaml`**
+
 ```yaml
 apiVersion: tekton.dev/v1
 kind: PipelineRun
@@ -137,7 +144,7 @@ spec:
     - name: source
       volumeClaimTemplate:
         spec:
-          accessModes: [ReadWriteOnce]
+          accessModes: [ ReadWriteOnce ]
           resources:
             requests:
               storage: 1Gi
@@ -147,6 +154,7 @@ spec:
 ```
 
 **`apps/ci/pipeline.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -258,12 +266,12 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 
 ## Probleemoplossing
 
-| Symptoom | Oplossing |
-|----------|-----------|
-| PipelineRun blijft "Running" | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670` |
-| Secret `git-credentials` niet gevonden | Voer `./scripts/vm/set-git-credentials.sh` uit |
-| Push mislukt: 403 Forbidden | PAT heeft onvoldoende rechten — `repo`-scope vereist |
-| ArgoCD synchroniseert niet | Klik **Refresh** in de UI |
+| Symptoom                               | Oplossing                                                              |
+|----------------------------------------|------------------------------------------------------------------------|
+| PipelineRun blijft "Running"           | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670` |
+| Secret `git-credentials` niet gevonden | Voer `./scripts/vm/set-git-credentials.sh` uit                         |
+| Push mislukt: 403 Forbidden            | PAT heeft onvoldoende rechten — `repo`-scope vereist                   |
+| ArgoCD synchroniseert niet             | Klik **Refresh** in de UI                                              |
 
 ---
 

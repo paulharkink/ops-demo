@@ -16,7 +16,8 @@ Doe dit de dag ervoor — niet op de ochtend van de workshop zelf.
 
 Minimaal 12 GB vrij RAM, ~15 GB schijfruimte.
 
-**Na installatie van VirtualBox: herstart je laptop.** VirtualBox installeert een kernel-extensie en die werkt pas na een reboot.
+**Na installatie van VirtualBox: herstart je laptop.** VirtualBox installeert een kernel-extensie en die werkt pas na
+een reboot.
 
 Snelle check — alle drie moeten een versie tonen:
 
@@ -43,9 +44,11 @@ cd ops-demo
 vagrant up
 ```
 
-De eerste keer duurt dit 10–15 minuten. Vagrant downloadt de Ubuntu 24.04 box, installeert k3s, Helm en yq, en haalt de workshop-images alvast op. Daarna start de VM in een paar seconden.
+De eerste keer duurt dit 10–15 minuten. Vagrant downloadt de Ubuntu 24.04 box, installeert k3s, Helm en yq, en haalt de
+workshop-images alvast op. Daarna start de VM in een paar seconden.
 
 Aan het einde zie je:
+
 ```
 ════════════════════════════════════════════════════════
   VM provisioned successfully!
@@ -97,6 +100,7 @@ VBoxManage list hostonlyifs
 ```
 
 Bestaat hij niet:
+
 ```bash
 VBoxManage hostonlyif create
 VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0

@@ -1,7 +1,8 @@
 # Oefening 03 — MetalLB + Ingress-Nginx
 
 **Tijd**: ~45 minuten
-**Doel**: podinfo en de ArgoCD UI bereikbaar maken op een echt LAN-IP — vanuit je browser op je laptop, zonder port-forward.
+**Doel**: podinfo en de ArgoCD UI bereikbaar maken op een echt LAN-IP — vanuit je browser op je laptop, zonder
+port-forward.
 
 ---
 
@@ -16,13 +17,17 @@
 
 ## Achtergrond
 
-In cloud-Kubernetes (EKS, GKE, AKS) regelt `type: LoadBalancer` automatisch een load balancer met een extern IP. Op bare metal of lokale VMs doet niets dat — pods blijven onbereikbaar van buitenaf.
+In cloud-Kubernetes (EKS, GKE, AKS) regelt `type: LoadBalancer` automatisch een load balancer met een extern IP. Op bare
+metal of lokale VMs doet niets dat — pods blijven onbereikbaar van buitenaf.
 
-**MetalLB** lost dit op: hij luistert naar LoadBalancer-services en kent IPs toe uit een pool die jij definieert. In L2-modus gebruikt hij ARP — jouw laptop vraagt "wie heeft 192.168.56.200?" en MetalLB antwoordt namens de VM.
+**MetalLB** lost dit op: hij luistert naar LoadBalancer-services en kent IPs toe uit een pool die jij definieert. In
+L2-modus gebruikt hij ARP — jouw laptop vraagt "wie heeft 192.168.56.200?" en MetalLB antwoordt namens de VM.
 
-**Ingress-Nginx** is één LoadBalancer-service die van MetalLB één IP krijgt. Al je apps delen dat IP — Nginx routeert op basis van de `Host:` header.
+**Ingress-Nginx** is één LoadBalancer-service die van MetalLB één IP krijgt. Al je apps delen dat IP — Nginx routeert op
+basis van de `Host:` header.
 
-**nip.io** is publieke wildcard-DNS: `iets.192.168.56.200.nip.io` resolvet altijd naar `192.168.56.200`. Geen `/etc/hosts` aanpassen.
+**nip.io** is publieke wildcard-DNS: `iets.192.168.56.200.nip.io` resolvet altijd naar `192.168.56.200`. Geen
+`/etc/hosts` aanpassen.
 
 ---
 
@@ -33,6 +38,7 @@ In cloud-Kubernetes (EKS, GKE, AKS) regelt `type: LoadBalancer` automatisch een 
 Maak de volgende bestanden aan:
 
 **`manifests/networking/metallb/values.yaml`**
+
 ```yaml
 speaker:
   tolerations:
@@ -42,6 +48,7 @@ speaker:
 ```
 
 **`manifests/networking/metallb/metallb-config.yaml`**
+
 ```yaml
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
@@ -63,6 +70,7 @@ spec:
 ```
 
 **`apps/networking/metallb.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -96,6 +104,7 @@ spec:
 ```
 
 **`apps/networking/metallb-config.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -126,6 +135,7 @@ spec:
 ### 2. Ingress-Nginx installeren
 
 **`manifests/networking/ingress-nginx/values.yaml`**
+
 ```yaml
 controller:
   ingressClassResource:
@@ -141,6 +151,7 @@ controller:
 ```
 
 **`apps/networking/ingress-nginx.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -191,6 +202,7 @@ kubectl get svc -n ingress-nginx
 ```
 
 Vanuit je laptop:
+
 ```bash
 curl http://192.168.56.200
 # 404 van Nginx — klopt, nog geen Ingress-regel
@@ -201,6 +213,7 @@ curl http://192.168.56.200
 ### 4. Ingress voor podinfo toevoegen
 
 **`manifests/apps/podinfo/ingress.yaml`**
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -259,10 +272,10 @@ Open: **http://argocd.192.168.56.200.nip.io**
 
 ## Verwacht resultaat
 
-| URL | App |
-|-----|-----|
+| URL                                  | App            |
+|--------------------------------------|----------------|
 | http://podinfo.192.168.56.200.nip.io | podinfo v6.6.2 |
-| http://argocd.192.168.56.200.nip.io  | ArgoCD UI |
+| http://argocd.192.168.56.200.nip.io  | ArgoCD UI      |
 
 Beide bereikbaar vanaf je laptop zonder port-forward.
 
@@ -270,15 +283,16 @@ Beide bereikbaar vanaf je laptop zonder port-forward.
 
 ## Probleemoplossing
 
-| Symptoom | Oplossing |
-|----------|-----------|
-| `EXTERNAL-IP` blijft `<pending>` | MetalLB is nog niet klaar — check `kubectl get pods -n metallb-system` |
-| curl naar 192.168.56.200 time-out | VirtualBox host-only adapter niet geconfigureerd — zie vm-setup.md |
-| nip.io resolvet niet | Tijdelijk DNS-probleem, probeer opnieuw of voeg toe aan `/etc/hosts` |
-| ArgoCD ingress geeft 502 | Wacht tot ArgoCD herstart na de values-wijziging |
+| Symptoom                          | Oplossing                                                              |
+|-----------------------------------|------------------------------------------------------------------------|
+| `EXTERNAL-IP` blijft `<pending>`  | MetalLB is nog niet klaar — check `kubectl get pods -n metallb-system` |
+| curl naar 192.168.56.200 time-out | VirtualBox host-only adapter niet geconfigureerd — zie vm-setup.md     |
+| nip.io resolvet niet              | Tijdelijk DNS-probleem, probeer opnieuw of voeg toe aan `/etc/hosts`   |
+| ArgoCD ingress geeft 502          | Wacht tot ArgoCD herstart na de values-wijziging                       |
 
 ---
 
 ## Volgende stap
 
-In Oefening 04 bouw je een Tekton-pipeline die automatisch de image-tag in Git aanpast, pusht, en laat ArgoCD de update uitrollen.
+In Oefening 04 bouw je een Tekton-pipeline die automatisch de image-tag in Git aanpast, pusht, en laat ArgoCD de update
+uitrollen.

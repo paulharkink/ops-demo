@@ -21,7 +21,10 @@ Oefening 01 afgerond. ArgoCD draait en de root app is Synced.
 
 ## Achtergrond: wat is podinfo?
 
-podinfo is een kleine Go-webapp van Stefan Prodan (ook de maker van Flux). Hij wordt veel gebruikt in Kubernetes-demo's: toont zijn eigen versienummer, heeft `/healthz` en `/readyz` endpoints, en ziet er prima uit in een browser. Geen externe dependencies, geen secrets nodig.
+podinfo is een kleine Go-webapp van Stefan Prodan (ook de maker van Flux).
+Hij wordt veel gebruikt in Kubernetes-demo's: toont zijn eigen versienummer,
+heeft `/healthz` en `/readyz` endpoints, en ziet er prima uit in een browser.
+Geen externe dependencies, geen secrets nodig.
 
 ---
 
@@ -32,6 +35,7 @@ podinfo is een kleine Go-webapp van Stefan Prodan (ook de maker van Flux). Hij w
 Maak de volgende bestanden aan:
 
 **`manifests/apps/podinfo/namespace.yaml`**
+
 ```yaml
 apiVersion: v1
 kind: Namespace
@@ -40,6 +44,7 @@ metadata:
 ```
 
 **`manifests/apps/podinfo/deployment.yaml`**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -78,6 +83,7 @@ spec:
 ```
 
 **`manifests/apps/podinfo/service.yaml`**
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -98,6 +104,7 @@ spec:
 ### 2. De ArgoCD Application aanmaken
 
 **`apps/apps/podinfo.yaml`**
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -137,7 +144,8 @@ git push
 
 Dit is de enige actie die nodig is om de applicatie te deployen.
 
-> **Het GitOps-punt**: je hebt geen `kubectl apply` uitgevoerd voor podinfo. Je hebt een bestand gecommit, en ArgoCD regelt de rest.
+> **Het GitOps-punt**: je hebt geen `kubectl apply` uitgevoerd voor podinfo.
+> Je hebt een bestand gecommit, en ArgoCD regelt de rest.
 
 ---
 
@@ -179,10 +187,13 @@ Versie `6.6.2` — dat klopt met de image-tag in `deployment.yaml`.
 Pas de UI-kleur aan om te bewijzen dat de loop werkt.
 
 Verander in `manifests/apps/podinfo/deployment.yaml`:
+
 ```yaml
 value: "#6C48C5"
 ```
+
 naar bijv.:
+
 ```yaml
 value: "#2ecc71"
 ```
@@ -195,7 +206,9 @@ git commit -m "chore: verander podinfo UI-kleur"
 git push
 ```
 
-Binnen ~3 minuten (standaard poll-interval van ArgoCD) herstart de pod en zie je de nieuwe kleur. Je kunt ook op **Refresh** klikken in de UI voor direct effect.
+Binnen ~3 minuten (standaard poll-interval van ArgoCD) herstart de pod
+en zie je de nieuwe kleur. Je kunt ook op **Refresh** klikken in de UI
+voor direct effect.
 
 ---
 
@@ -210,13 +223,15 @@ podinfo   Synced        Healthy
 
 ## Probleemoplossing
 
-| Symptoom | Oplossing |
-|----------|-----------|
+| Symptoom                         | Oplossing                                                     |
+|----------------------------------|---------------------------------------------------------------|
 | Application blijft "Progressing" | `kubectl describe pod -n podinfo` — waarschijnlijk image pull |
-| ArgoCD toont OutOfSync na push | Klik **Refresh** of wacht 3 minuten |
+| ArgoCD toont OutOfSync na push   | Klik **Refresh** of wacht 3 minuten                           |
 
 ---
 
 ## Volgende stap
 
-podinfo draait maar is alleen bereikbaar via port-forward. In Oefening 03 stel je MetalLB en Ingress-Nginx in zodat je de app vanuit je browser op je laptop kunt bereiken — zonder port-forward.
+podinfo draait maar is alleen bereikbaar via port-forward.
+In Oefening 03 stel je MetalLB en Ingress-Nginx in zodat je de app
+vanuit je browser op je laptop kunt bereiken, zonder port-forward.
