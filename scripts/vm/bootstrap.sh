@@ -126,6 +126,8 @@ spec:
     repoURL: ${REPO_URL}
     targetRevision: HEAD
     path: apps
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
