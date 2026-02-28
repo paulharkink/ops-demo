@@ -1,6 +1,7 @@
 # Kubernetes GitOps Workshop
 
-Twee en een half tot vier uur hands-on cluster operations met ArgoCD, MetalLB, Ingress-Nginx en Tekton. Alles draait lokaal op een single-node k3s cluster in een VM.
+Twee en een half tot vier uur hands-on cluster operations met ArgoCD, MetalLB, Ingress-Nginx en Tekton. Alles draait
+lokaal op een single-node k3s cluster in een VM.
 
 ---
 
@@ -8,11 +9,11 @@ Twee en een half tot vier uur hands-on cluster operations met ArgoCD, MetalLB, I
 
 Je hebt drie dingen nodig op je laptop. Installeer ze de dag van tevoren — niet op de dag zelf.
 
-| Tool           | Download                                              |
-|----------------|-------------------------------------------------------|
-| VirtualBox 7.x | https://www.virtualbox.org/wiki/Downloads — herstart je laptop erna |
-| Vagrant 2.4.x  | https://developer.hashicorp.com/vagrant/downloads     |
-| Git            | https://git-scm.com/downloads                         |
+| Tool           | Download                                                            |
+|----------------|---------------------------------------------------------------------|
+| VirtualBox 7.x | https://www.virtualbox.org/wiki/Downloads — op Windows: reboot alleen als installer/Windows daarom vraagt |
+| Vagrant 2.4.x  | https://developer.hashicorp.com/vagrant/downloads                   |
+| Git            | https://git-scm.com/downloads                                       |
 
 Minimaal 12 GB vrij RAM en ~15 GB schijfruimte. Snelle check:
 
@@ -26,20 +27,41 @@ Als één van de drie niets teruggeeft: installeren en opnieuw proberen.
 
 ## Aan de slag
 
-**Fork eerst de repo** naar je eigen GitHub-account — ga naar https://github.com/paulharkink/ops-demo en klik Fork. Zo kun je zelf pushen zonder dat je toegang nodig hebt tot de originele repo.
+**Fork eerst de repo** naar je eigen GitHub-account — ga naar https://github.com/paulharkink/ops-demo en klik Fork. Zo
+kun je zelf pushen zonder dat je toegang nodig hebt tot de originele repo.
 
+1. Clone je fork op je host-machine.
 ```bash
-git clone https://github.com/JOUW_USERNAME/ops-demo.git
-cd ops-demo
-vagrant up          # eerste keer ~10–15 min
-vagrant ssh         # gebruik dit voor VM-toegang (geen handmatige ssh nodig)
-cd /vagrant
-./scripts/bootstrap.sh
+git clone https://github.com/JOUW_USERNAME/ops-demo.git && cd ops-demo
+```
+2. Start de VM.
+```bash
+vagrant up
+```
+3. Run bootstrap vanaf je host (script voert bootstrap in de VM uit).
+```bash
+./scripts/bootstrap-from-host.sh
+```
+```powershell
+./scripts/bootstrap-from-host.ps1
+```
+4. Open ArgoCD UI via tunnel.
+```bash
+./scripts/argocd-ui-tunnel.sh
+```
+```powershell
+./scripts/argocd-ui-tunnel.ps1
+```
+5. Open in je browser:
+```text
+https://localhost:8080
 ```
 
-Volg dan de oefeningen in volgorde. Zie [docs/vm-setup.md](docs/vm-setup.md) als er iets misgaat bij de VM.
+Volg daarna de oefeningen in volgorde. Zie [docs/vm-setup.md](docs/vm-setup.md) als er iets misgaat bij de VM.
 
-Voor alle workshopstappen geldt: log in op de VM met `vagrant ssh`. Je hoeft het VM-IP niet te weten om in te loggen.
+Belangrijk:
+- Je hoeft het VM-IP niet te weten om in te loggen of te tunnelen; gebruik `vagrant ssh`.
+- Je hoeft de repo niet opnieuw in de VM te clonen: Vagrant mount je host-repo automatisch als `/vagrant`.
 
 ---
 
@@ -74,12 +96,8 @@ Beginners: focus op 01–03 (~1u45m). De rest: probeer 01–05 te halen.
 
 ## Vastgelopen?
 
-Elke solution branch is cumulatief — hij bevat alles t/m die oefening. Je kunt een PR openen van een solution branch naar jouw eigen branch om precies te zien wat er mist.
-
-```bash
-git fetch origin
-git show origin/solution/03-metallb-ingress:manifests/networking/metallb/metallb-config.yaml
-```
+Elke solution branch is cumulatief — hij bevat alles t/m die oefening. Je kunt een PR openen van een solution branch
+naar jouw eigen branch om precies te zien wat er mist.
 
 | Branch                         | Bevat                               |
 |--------------------------------|-------------------------------------|

@@ -51,6 +51,14 @@ $provision = <<-SHELL
   cp /etc/rancher/k3s/k3s.yaml /home/vagrant/.kube/config
   # Point server to host-only IP so it works outside the VM too
   sed -i "s|127.0.0.1|#{HOST_ONLY_IP}|g" /home/vagrant/.kube/config
+  # Name the kube context explicitly so workshop scripts can verify target cluster
+  if kubectl --kubeconfig /home/vagrant/.kube/config config get-contexts ops-demo >/dev/null 2>&1; then
+    kubectl --kubeconfig /home/vagrant/.kube/config config use-context ops-demo
+  else
+    CURRENT_CONTEXT=$(kubectl --kubeconfig /home/vagrant/.kube/config config current-context)
+    kubectl --kubeconfig /home/vagrant/.kube/config config rename-context "${CURRENT_CONTEXT}" ops-demo
+    kubectl --kubeconfig /home/vagrant/.kube/config config use-context ops-demo
+  fi
   chown -R vagrant:vagrant /home/vagrant/.kube
   chmod 600 /home/vagrant/.kube/config
 
