@@ -154,6 +154,12 @@ spec:
 
 **`apps/ci/pipeline.yaml`**
 
+Belangrijk:
+- Dit bestand is alleen de ArgoCD `Application` wrapper.
+- Daarom is het klein en zie je hier geen Tekton-steps.
+- De echte pipeline-steps staan in `manifests/ci/pipeline/pipeline.yaml`
+  (clone, validate, bump-image-tag, git-commit-push).
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -161,7 +167,7 @@ metadata:
   name: workshop-pipeline
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/sync-wave: "7"
 spec:
   project: workshop
   source:
@@ -187,9 +193,85 @@ git push
 
 ---
 
-### 3. Git-credentials instellen
+### 3. Tekton Dashboard zichtbaar maken (UI)
 
-De pipeline moet kunnen pushen naar jouw fork. Maak een GitHub PAT aan met `repo`-scope en voer dan uit:
+Maak een aparte Tekton Dashboard app, met Ingress zodat je PipelineRuns in de browser ziet.
+
+**`manifests/ci/dashboard/kustomization.yaml`**
+
+```yaml
+resources:
+  - https://storage.googleapis.com/tekton-releases/dashboard/latest/release-full.yaml
+  - ingress.yaml
+```
+
+**`manifests/ci/dashboard/ingress.yaml`**
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tekton-dashboard
+  namespace: tekton-pipelines
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tekton.192.168.56.200.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tekton-dashboard
+                port:
+                  number: 9097
+```
+
+**`apps/ci/tekton-dashboard.yaml`**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tekton-dashboard
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  project: workshop
+  source:
+    repoURL: JOUW_FORK_URL
+    targetRevision: HEAD
+    path: manifests/ci/dashboard
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-pipelines
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+```bash
+git add apps/ci/tekton-dashboard.yaml manifests/ci/dashboard/
+git commit -m "feat: voeg Tekton Dashboard met ingress toe"
+git push
+```
+
+Open daarna: **http://tekton.192.168.56.200.nip.io**
+
+---
+
+### 4. Git-credentials instellen
+
+Dit is een verplichte stap vóór je de PipelineRun triggert.
+Zonder `git-credentials` secret faalt de `clone` task direct.
+
+De pipeline moet kunnen pushen naar jouw fork.
+Maak een GitHub PAT aan met `repo`-scope en voer dan uit:
 
 ```bash
 ./scripts/vm/set-git-credentials.sh <jouw-github-gebruikersnaam> <jouw-pat>
@@ -199,7 +281,10 @@ Dit maakt een Kubernetes Secret aan in de cluster — **het PAT komt niet in Git
 
 ---
 
-### 4. Pipeline triggeren
+### 5. Pipeline triggeren
+
+Controleer eerst dat stap 3 gelukt is.
+Pas daarna de PipelineRun starten:
 
 ```bash
 kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
@@ -221,7 +306,7 @@ De PipelineRun duurt ~2–3 minuten.
 
 ---
 
-### 5. Controleer de commit
+### 6. Controleer de commit
 
 ```bash
 git fetch origin
@@ -231,7 +316,7 @@ git log origin/main --oneline -3
 
 ---
 
-### 6. ArgoCD laten synchroniseren
+### 7. ArgoCD laten synchroniseren
 
 Klik **Refresh** op de **podinfo** application in ArgoCD, of wacht op het automatische poll-interval.
 
@@ -241,7 +326,7 @@ kubectl rollout status deployment/podinfo -n podinfo
 
 ---
 
-### 7. Controleer in de browser
+### 8. Controleer in de browser
 
 Open **http://podinfo.192.168.56.200.nip.io** — je ziet nu versie **6.7.0**.
 
@@ -265,13 +350,14 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 
 ## Probleemoplossing
 
-| Symptoom                               | Oplossing                                                              |
-|----------------------------------------|------------------------------------------------------------------------|
-| PipelineRun blijft "Running"           | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670` |
-| Secret `git-credentials` niet gevonden | Voer `./scripts/vm/set-git-credentials.sh` uit                         |
-| Push mislukt: 403 Forbidden            | PAT heeft onvoldoende rechten — `repo`-scope vereist                   |
-| ArgoCD synchroniseert niet             | Klik **Refresh** in de UI                                              |
+| Symptoom                                | Oplossing                                                                                              |
+|-----------------------------------------|--------------------------------------------------------------------------------------------------------|
+| PipelineRun blijft "Running"            | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670`                                 |
+| Secret `git-credentials` niet gevonden  | Voer `./scripts/vm/set-git-credentials.sh` uit                                                         |
+| Push mislukt: 403 Forbidden             | PAT heeft onvoldoende rechten — `repo`-scope vereist                                                   |
+| ArgoCD synchroniseert niet              | Klik **Refresh** in de UI                                                                              |
 | `root` blijft OutOfSync op app `tekton` | Verwijder de lege `kustomize: {}` uit `apps/ci/tekton.yaml` (Argo normaliseert deze weg in live state) |
+| Tekton Dashboard toont standaard Nginx/404 | Controleer `apps/ci/tekton-dashboard.yaml` en `manifests/ci/dashboard/ingress.yaml` host/service/poort |
 
 ---
 
