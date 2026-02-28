@@ -32,12 +32,14 @@ Als één van de drie niets teruggeeft: installeren en opnieuw proberen.
 git clone https://github.com/JOUW_USERNAME/ops-demo.git
 cd ops-demo
 vagrant up          # eerste keer ~10–15 min
-vagrant ssh
+vagrant ssh         # gebruik dit voor VM-toegang (geen handmatige ssh nodig)
 cd /vagrant
 ./scripts/bootstrap.sh
 ```
 
 Volg dan de oefeningen in volgorde. Zie [docs/vm-setup.md](docs/vm-setup.md) als er iets misgaat bij de VM.
+
+Voor alle workshopstappen geldt: log in op de VM met `vagrant ssh`. Je hoeft het VM-IP niet te weten om in te loggen.
 
 ---
 
