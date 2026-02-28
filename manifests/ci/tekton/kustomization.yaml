@@ -1,0 +1,6 @@
+# Installs Tekton Pipelines v0.65.1 via kustomize remote reference.
+# ArgoCD applies this with its built-in kustomize support.
+# Images are pre-pulled by the Vagrantfile, so this only needs network to
+# fetch the manifest once (not the images).
+resources:
+  - https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.65.1/release.yaml
