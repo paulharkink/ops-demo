@@ -1,0 +1,56 @@
+# kube-prometheus-stack Helm values (workshop — lightweight config)
+# Chart: prometheus-community/kube-prometheus-stack 68.x
+
+grafana:
+  adminPassword: workshop123
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.192.168.56.200.nip.io
+
+  # Lightweight for a workshop VM
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+
+    # Scrape everything in the cluster
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    # Short retention for a workshop
+    retention: 6h
+    retentionSize: "1GB"
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 2Gi
+
+alertmanager:
+  enabled: false   # not needed for the workshop
+
+# Reduce resource footprint
+kubeStateMetrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+nodeExporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
