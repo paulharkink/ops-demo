@@ -110,7 +110,7 @@ $provision = <<-SHELL
   echo "  VM provisioned successfully!"
   echo "  SSH:       vagrant ssh"
   echo "  Next step: follow docs/vm-setup.md to verify, then"
-  echo "             run scripts/bootstrap.sh to install ArgoCD"
+  echo "             run ./scripts/host/bootstrap-from-host.sh to install ArgoCD"
   echo "════════════════════════════════════════════════════════"
 SHELL
 

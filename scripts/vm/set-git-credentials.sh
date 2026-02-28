@@ -2,7 +2,7 @@
 # set-git-credentials.sh — Create the git-credentials Secret for the Tekton pipeline.
 #
 # Usage:
-#   ./scripts/set-git-credentials.sh <github-username> <github-pat>
+#   ./scripts/vm/set-git-credentials.sh <github-username> <github-pat>
 #
 # The PAT needs: repo (read + write) scope.
 # The Secret is NOT stored in git — it lives only in the cluster.

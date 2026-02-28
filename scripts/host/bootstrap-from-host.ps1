@@ -1,22 +1,17 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$RepoRoot = Split-Path -Parent $PSScriptRoot
+$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $RepoRoot
 
-function Ensure-VagrantRunning {
-  $status = vagrant status --machine-readable | Out-String
-  if ($status -notmatch ',state,running') {
-    Write-Host '[ops-demo] VM is not running; starting with vagrant up...'
-    vagrant up
-  }
+$status = vagrant status --machine-readable | Out-String
+if ($status -notmatch ',state,running') {
+  Write-Host '[ops-demo] VM is not running; starting with vagrant up...'
+  vagrant up
 }
 
-Write-Host '[ops-demo] Checking VM status...'
-Ensure-VagrantRunning
-
 Write-Host '[ops-demo] Running bootstrap in VM...'
-$output = vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; cd /vagrant && ./scripts/bootstrap.sh" | Out-String
+$output = vagrant ssh -c "cd /vagrant && ./scripts/vm/bootstrap.sh" | Out-String
 Write-Host $output
 
 $password = $null
@@ -39,5 +34,5 @@ if ($password) {
 
 Write-Host ''
 Write-Host 'Next step to open ArgoCD UI from host:'
-Write-Host '  ./scripts/argocd-ui-tunnel.ps1'
-Write-Host 'Then browse: https://localhost:8080'
+Write-Host '  ./scripts/host/argocd-ui-tunnel.ps1'
+Write-Host 'Then browse: http://localhost:8080'

@@ -89,7 +89,7 @@ PR: "bump API naar v2.3.1-hotfix"
 
 **Drift detection**: Als iemand direct `kubectl apply` doet, ziet ArgoCD drift en kan het automatisch terugdraaien. De cluster convergeert altijd terug naar wat in Git staat.
 
-**Disaster recovery**: Cluster weg? `vagrant up` + `./scripts/bootstrap.sh` + `kubectl apply -f apps/root.yaml` en ArgoCD bouwt alles opnieuw op. Git is je backup.
+**Disaster recovery**: Cluster weg? `vagrant up` + `./scripts/vm/bootstrap.sh` + `kubectl apply -f apps/root.yaml` en ArgoCD bouwt alles opnieuw op. Git is je backup.
 
 **Samenwerking tussen teams**: Developers openen PR's voor deploys. Ops reviewt manifest-wijzigingen. Geen SSH-sleutels op productie nodig.
 

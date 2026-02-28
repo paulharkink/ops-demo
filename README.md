@@ -40,21 +40,21 @@ vagrant up
 ```
 3. Run bootstrap vanaf je host (script voert bootstrap in de VM uit).
 ```bash
-./scripts/bootstrap-from-host.sh
+./scripts/host/bootstrap-from-host.sh
 ```
 ```powershell
-./scripts/bootstrap-from-host.ps1
+./scripts/host/bootstrap-from-host.ps1
 ```
 4. Open ArgoCD UI via tunnel.
 ```bash
-./scripts/argocd-ui-tunnel.sh
+./scripts/host/argocd-ui-tunnel.sh
 ```
 ```powershell
-./scripts/argocd-ui-tunnel.ps1
+./scripts/host/argocd-ui-tunnel.ps1
 ```
 5. Open in je browser:
 ```text
-https://localhost:8080
+http://localhost:8080
 ```
 
 Volg daarna de oefeningen in volgorde. Zie [docs/vm-setup.md](docs/vm-setup.md) als er iets misgaat bij de VM.

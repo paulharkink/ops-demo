@@ -32,7 +32,7 @@ kubectl get nodes
 ### 1. Bootstrap-script uitvoeren
 
 ```bash
-./scripts/bootstrap.sh
+./scripts/vm/bootstrap.sh
 ```
 
 Het script doet het volgende:

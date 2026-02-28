@@ -2,17 +2,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 
-require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || {
-    echo "ERROR: required command not found: $1" >&2
-    exit 1
-  }
+command -v vagrant >/dev/null 2>&1 || {
+  echo "ERROR: required command not found: vagrant" >&2
+  exit 1
 }
-
-require_cmd vagrant
 
 echo "[ops-demo] Checking VM status..."
 if ! vagrant status --machine-readable | rg -q ',state,running'; then
@@ -24,7 +20,7 @@ log_file="$(mktemp)"
 trap 'rm -f "${log_file}"' EXIT
 
 echo "[ops-demo] Running bootstrap in VM..."
-vagrant ssh -c "export KUBECONFIG=/home/vagrant/.kube/config; cd /vagrant && ./scripts/bootstrap.sh" | tee "${log_file}"
+vagrant ssh -c "cd /vagrant && ./scripts/vm/bootstrap.sh" | tee "${log_file}"
 
 password="$(sed -n 's/.*ArgoCD admin-wachtwoord: //p' "${log_file}" | tail -n 1 | tr -d '\r')"
 if [[ -z "${password}" ]]; then
@@ -41,5 +37,5 @@ fi
 
 echo ""
 echo "Next step to open ArgoCD UI from host:"
-echo "  ./scripts/argocd-ui-tunnel.sh"
-echo "Then browse: https://localhost:8080"
+echo "  ./scripts/host/argocd-ui-tunnel.sh"
+echo "Then browse: http://localhost:8080"

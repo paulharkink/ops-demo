@@ -185,7 +185,7 @@ git push
 De pipeline moet kunnen pushen naar jouw fork. Maak een GitHub PAT aan met `repo`-scope en voer dan uit:
 
 ```bash
-./scripts/set-git-credentials.sh <jouw-github-gebruikersnaam> <jouw-pat>
+./scripts/vm/set-git-credentials.sh <jouw-github-gebruikersnaam> <jouw-pat>
 ```
 
 Dit maakt een Kubernetes Secret aan in de cluster — **het PAT komt niet in Git**.
@@ -261,7 +261,7 @@ kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
 | Symptoom | Oplossing |
 |----------|-----------|
 | PipelineRun blijft "Running" | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670` |
-| Secret `git-credentials` niet gevonden | Voer `./scripts/set-git-credentials.sh` uit |
+| Secret `git-credentials` niet gevonden | Voer `./scripts/vm/set-git-credentials.sh` uit |
 | Push mislukt: 403 Forbidden | PAT heeft onvoldoende rechten — `repo`-scope vereist |
 | ArgoCD synchroniseert niet | Klik **Refresh** in de UI |
 

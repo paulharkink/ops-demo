@@ -4,7 +4,7 @@
 #
 # Gebruik:
 #   cd /vagrant
-#   ./scripts/bootstrap.sh
+#   ./scripts/vm/bootstrap.sh
 #
 # Wat het doet:
 #   1. Detecteert de URL van jouw fork op basis van de git remote
@@ -19,7 +19,7 @@ set -euo pipefail
 
 ARGOCD_NAMESPACE="argocd"
 ARGOCD_CHART_VERSION="7.7.11"
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 EXPECTED_NODE_NAME="ops-demo"
 EXPECTED_HOST_ONLY_IP="$(awk -F'"' '/^HOST_ONLY_IP = "/ {print $2; exit}' "${REPO_ROOT}/Vagrantfile" 2>/dev/null || true)"
 EXPECTED_HOST_ONLY_IP="${EXPECTED_HOST_ONLY_IP:-192.168.56.10}"
@@ -153,11 +153,11 @@ if [[ -n "${SSH_CONNECTION:-}" ]]; then
   echo "  Je draait via SSH (headless VM). Gebruik deze flow:"
   echo "    1) Op je laptop: vagrant ssh -- -L 8080:127.0.0.1:8080"
   echo "    2) In die VM-shell: kubectl port-forward svc/argocd-server -n argocd 8080:443"
-  echo "    3) Open op je laptop: https://localhost:8080  (login: admin / ${ARGOCD_PASSWORD})"
+  echo "    3) Open op je laptop: http://localhost:8080  (login: admin / ${ARGOCD_PASSWORD})"
 else
   echo "  Open de ArgoCD UI — voer dit uit in een nieuw terminal:"
   echo "    kubectl port-forward svc/argocd-server -n argocd 8080:443"
-  echo "  Dan: https://localhost:8080  (login: admin / ${ARGOCD_PASSWORD})"
+  echo "  Dan: http://localhost:8080  (login: admin / ${ARGOCD_PASSWORD})"
 fi
 echo ""
 echo "  apps/root.yaml is aangemaakt met jouw fork-URL."
