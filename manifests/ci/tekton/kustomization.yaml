@@ -4,3 +4,8 @@
 # fetch the manifest once (not the images).
 resources:
   - https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.65.1/release.yaml
+patches:
+  - path: namespace-podsecurity-patch.yaml
+    target:
+      kind: Namespace
+      name: tekton-pipelines
