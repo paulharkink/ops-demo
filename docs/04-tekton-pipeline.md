@@ -177,7 +177,7 @@ Waarom dit:
 Wat er in die pipeline zit:
 
 - `clone`: clonet jouw repo met credentials uit `git-credentials`.
-- `validate`: voert `kubectl --dry-run=client` uit op de podinfo manifests.
+- `validate`: doet client-side manifestvalidatie op de podinfo manifests.
 - `bump-image-tag`: wijzigt de image tag in `deployment.yaml`.
 - `git-commit-push`: commit + push naar `main`, waarna ArgoCD de wijziging oppakt.
 
@@ -658,7 +658,6 @@ Met zo'n brug maakt elke push een nieuwe `PipelineRun` aan.
 | ArgoCD synchroniseert niet                 | Klik **Refresh** in de UI                                                                                                                                                  |
 | `root` blijft OutOfSync op app `tekton`    | Verwijder de lege `kustomize: {}` uit `apps/ci/tekton.yaml` (Argo normaliseert deze weg in live state)                                                                     |
 | PipelineRun faalt met `PodAdmissionFailed` | Controleer dat `tekton-pipelines` label `pod-security.kubernetes.io/enforce=privileged` heeft (via `manifests/ci/tekton/namespace-podsecurity-patch.yaml`)                 |
-| `validate` task faalt met `Forbidden`      | Geef `pipeline-runner` read-rechten op de resources in namespace `podinfo` (Deployment/Service/Ingress/Namespace) of pas de validate-stap aan                              |
 | Tekton Dashboard toont standaard Nginx/404 | Controleer `apps/ci/tekton-dashboard.yaml` en `manifests/ci/dashboard/ingress.yaml` host/service/poort                                                                     |
 | Webhook maakt geen PipelineRun aan         | Check `kubectl get eventlistener -n tekton-pipelines` en controleer GitHub webhook URL/secret/eventtype                                                                    |
 
