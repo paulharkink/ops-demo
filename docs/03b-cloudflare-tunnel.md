@@ -17,7 +17,7 @@
 
 > **Voor beginners (optioneel):**
 > Zie Cloudflare Tunnel als een "uitgaande connector":
-> een pod in jouw cluster belt zelf uit naar Cloudflare.
+> een proces in jouw omgeving belt zelf uit naar Cloudflare.
 > Daarna kan Cloudflare inkomend verkeer over die bestaande verbinding terugsturen.
 > Je hoeft dus geen poorten op je laptop/router open te zetten.
 
@@ -27,10 +27,65 @@
 
 - Oefening 03 afgerond (Ingress-Nginx werkt)
 - Een Cloudflare account
-- Een domein dat je in Cloudflare beheert
 - Je repo/fork op `main`
 
+Optioneel:
+- Eigen domein in Cloudflare (alleen nodig voor **Route B** hieronder)
+
 ---
+
+## Kies je route
+
+Je hebt twee manieren:
+
+- **Route A (geen domein nodig)**: snelle, tijdelijke `*.trycloudflare.com` URL
+- **Route B (met eigen domein, aanbevolen)**: stabiele URL zoals `tekton-webhook.<jouw-domein>`
+
+Wanneer welke?
+
+- Gebruik **Route A** als je snel wilt testen zonder domein.
+- Gebruik **Route B** als je een blijvende endpoint wilt (handig voor workshop-herhaling en stabiele GitHub webhook).
+
+---
+
+## Route A — Zonder eigen domein (tijdelijke test-URL)
+
+### A1. Start een quick tunnel vanaf je host
+
+> **HOST**
+> ```bash
+> cloudflared tunnel --url http://192.168.56.200 --http-host-header tekton-webhook.192.168.56.200.nip.io
+> ```
+
+Je krijgt output met een publieke URL, bijvoorbeeld:
+
+```text
+https://random-words.trycloudflare.com
+```
+
+Laat dit proces open staan.
+
+> **Voor beginners (optioneel):**
+> `--http-host-header` is belangrijk: daarmee blijft Ingress-Nginx de juiste route kiezen voor de Tekton listener.
+
+### A2. Gebruik deze URL in GitHub webhook
+
+In GitHub:
+
+- **Settings -> Webhooks -> Add webhook**
+- Payload URL: `https://random-words.trycloudflare.com`
+- Content type: `application/json`
+- Event: `Just the push event`
+
+### A3. Beperkingen van Route A
+
+- URL verandert bij herstart
+- Tunnel stopt als je terminal/proces stopt
+- Prima voor demo/test, minder geschikt als "vaste" setup
+
+---
+
+## Route B — Met eigen domein (stabiel, aanbevolen)
 
 ## Architectuur (hoog niveau)
 
@@ -54,11 +109,7 @@ Belangrijk:
 - Dit werkt ook als je cluster alleen op host-only netwerk draait.
 - Cloudflare bereikt je cluster via de actieve tunnelverbinding, niet via je LAN-IP.
 
----
-
-## Stappen
-
-### 1. Tunnel in Cloudflare aanmaken
+### B1. Tunnel in Cloudflare aanmaken
 
 In Cloudflare dashboard:
 
@@ -73,9 +124,7 @@ In Cloudflare dashboard:
 > Die token is het wachtwoord waarmee jouw `cloudflared` pod zich aanmeldt.
 > Iedereen met deze token kan jouw tunnel gebruiken; behandel hem als secret.
 
----
-
-### 2. Public hostname in Cloudflare configureren
+### B2. Public hostname in Cloudflare configureren
 
 In dezelfde tunnel:
 
@@ -91,9 +140,7 @@ In dezelfde tunnel:
 > Deze URL is expres een interne Kubernetes-service.
 > Alleen de cloudflared pod hoeft die te kunnen bereiken; internet ziet alleen de publieke hostname.
 
----
-
-### 3. Kubernetes manifests toevoegen
+### B3. Kubernetes manifests toevoegen
 
 Maak de volgende bestanden.
 
@@ -189,9 +236,7 @@ Vervang:
 - `PLAK_HIER_JE_CLOUDFLARE_TUNNEL_TOKEN`
 - `JOUW_FORK_URL`
 
----
-
-### 4. Committen en pushen
+### B4. Committen en pushen
 
 > **HOST**
 > ```bash
@@ -208,9 +253,7 @@ Wacht daarna op `Synced/Healthy`:
 > kubectl get pods -n cloudflare
 > ```
 
----
-
-### 5. Tunnel-status controleren
+### B5. Tunnel-status controleren
 
 > **VM**
 > ```bash
@@ -221,13 +264,14 @@ Zoek op regels zoals "connected" of "registered tunnel connection".
 
 ---
 
-### 6. Voorbereiden op Oefening 04 webhook
+## Voorbereiden op Oefening 04 webhook
 
-Als je in Oefening 04 Tekton Triggers hebt geïnstalleerd, gebruik in GitHub:
+Als je in Oefening 04 Tekton Triggers hebt geïnstalleerd:
 
-- **Payload URL**: `https://tekton-webhook.<jouw-domein>`
+- Bij **Route A**: gebruik je tijdelijke `https://...trycloudflare.com` URL
+- Bij **Route B**: gebruik `https://tekton-webhook.<jouw-domein>`
 
-Dus niet meer de host-only URL met `192.168.56.200.nip.io`.
+Gebruik in beide gevallen **niet** meer de host-only URL met `192.168.56.200.nip.io`.
 
 ---
 
@@ -239,6 +283,7 @@ Dus niet meer de host-only URL met `192.168.56.200.nip.io`.
 | Tunnel lijkt up, maar webhook geeft 502/504 | Controleer of `el-github-push-listener` service bestaat in `tekton-pipelines` |
 | Geen verkeer in Tekton na GitHub push | Controleer GitHub webhook deliveries + event type `push` + secret |
 | Argo app `cloudflared` blijft `Unknown` | Controleer of `repoURL` in `apps/networking/cloudflared.yaml` naar jouw fork wijst |
+| `trycloudflare.com` URL werkt eerst wel maar later niet meer | Quick tunnel is tijdelijk; start opnieuw of gebruik Route B |
 
 ---
 
@@ -250,3 +295,16 @@ Gebruik in een echte omgeving liever:
 - least-privilege Cloudflare account/API instellingen
 
 Voor deze workshop is één token in een Kubernetes Secret voldoende.
+
+---
+
+## Peek-solution
+
+Wil je een voorbeeld zien zonder alles handmatig te typen?
+
+- Branch: `solution/03b-cloudflare-tunnel`
+- Daarin staan:
+  - `apps/networking/cloudflared.yaml`
+  - `manifests/networking/cloudflared/namespace.yaml`
+  - `manifests/networking/cloudflared/token.secret.yaml` (placeholder token)
+  - `manifests/networking/cloudflared/deployment.yaml`
