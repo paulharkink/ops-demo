@@ -94,6 +94,7 @@ Belangrijk:
 | 01 | ArgoCD bootstrappen         | [docs/01-argocd-bootstrap.md](docs/01-argocd-bootstrap.md) | Kern  | 30 min |
 | 02 | podinfo deployen via GitOps | [docs/02-deploy-podinfo.md](docs/02-deploy-podinfo.md)     | Kern  | 30 min |
 | 03 | MetalLB + Ingress-Nginx     | [docs/03-metallb-ingress.md](docs/03-metallb-ingress.md)   | Kern  | 45 min |
+| 03b | Cloudflare Tunnel (webhooks) | [docs/03b-cloudflare-tunnel.md](docs/03b-cloudflare-tunnel.md) | Bonus | 30–45 min |
 | 04 | Tekton pipeline             | [docs/04-tekton-pipeline.md](docs/04-tekton-pipeline.md)   | Kern  | 45 min |
 | 05 | App upgrade + reflectie     | [docs/05-app-upgrade.md](docs/05-app-upgrade.md)           | Kern  | 15 min |
 | 06 | Prometheus + Grafana        | [docs/06-monitoring.md](docs/06-monitoring.md)             | Bonus | 60 min |
@@ -127,6 +128,7 @@ om precies te zien wat er in die specifieke oefening mist.
 | `solution/01-argocd-bootstrap` | ArgoCD draait                       |
 | `solution/02-deploy-podinfo`   | podinfo gesynchroniseerd via ArgoCD |
 | `solution/03-metallb-ingress`  | LAN-toegang via MetalLB + Ingress   |
+| `solution/03b-cloudflare-tunnel` | Cloudflare tunnel connector (token placeholders) |
 | `solution/04-tekton-pipeline`  | Volledige GitOps CI-loop            |
 | `solution/05-app-upgrade`      | podinfo op v6.7.0                   |
 | `solution/06-monitoring`       | Prometheus + Grafana actief         |

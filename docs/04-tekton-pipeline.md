@@ -475,6 +475,9 @@ Gebruik je GitLab/Gitea/Bitbucket, dan blijft het patroon hetzelfde maar de inte
 > - een publieke tunnel (`ngrok`, `cloudflared tunnel`)
 > - een webhook relay (`smee.io`)
 > - of een publiek bereikbare cluster endpoint (geen host-only-only setup)
+>
+> Als je **Oefening 03b** hebt gedaan, gebruik dan je Cloudflare Tunnel URL
+> (bijv. `https://tekton-webhook.<jouw-domein>`) als webhook endpoint.
 
 ### 1. Triggers resources toevoegen
 
