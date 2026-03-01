@@ -62,11 +62,13 @@ spec:
             script: |
               #!/bin/sh
               set -eu
-              # Inject credentials into the clone URL
-              REPO=$(echo "$(params.repo-url)" | sed "s|https://|https://${GIT_USERNAME}:${GIT_PASSWORD}@|")
-              git clone "${REPO}" .
+              # Use HTTP Authorization header instead of embedding creds in URL.
+              AUTH=$(printf "%s:%s" "${GIT_USERNAME}" "${GIT_PASSWORD}" | base64 | tr -d '\n')
+              git -c "http.extraHeader=Authorization: Basic ${AUTH}" clone "$(params.repo-url)" .
               git config user.name "$(params.git-user-name)"
               git config user.email "$(params.git-user-email)"
+              # Make the shared workspace writable for subsequent task images/users.
+              chmod -R a+rwX .
               echo "Cloned $(git log --oneline -1)"
       workspaces:
         - name: source
@@ -94,8 +96,8 @@ spec:
             script: |
               #!/bin/sh
               set -eu
-              echo "Running kubectl dry-run on manifests/apps/podinfo/"
-              kubectl apply --dry-run=client -f manifests/apps/podinfo/
+              echo "Running client-side manifest validation on manifests/apps/podinfo/"
+              kubectl create --dry-run=client -f manifests/apps/podinfo/
               echo "Validation passed."
       workspaces:
         - name: source
@@ -159,9 +161,8 @@ spec:
               git add manifests/apps/podinfo/deployment.yaml
               git commit -m "chore(pipeline): bump podinfo to $(params.new-tag)"
 
-              # Inject credentials for push
-              REMOTE_URL=$(git remote get-url origin | sed "s|https://|https://${GIT_USERNAME}:${GIT_PASSWORD}@|")
-              git push "${REMOTE_URL}" HEAD:main
+              AUTH=$(printf "%s:%s" "${GIT_USERNAME}" "${GIT_PASSWORD}" | base64 | tr -d '\n')
+              git -c "http.extraHeader=Authorization: Basic ${AUTH}" push origin HEAD:main
               echo "Pushed commit: $(git log --oneline -1)"
       workspaces:
         - name: source
