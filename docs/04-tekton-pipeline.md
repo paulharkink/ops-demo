@@ -14,6 +14,15 @@ volledige GitOps CI/CD-loop.
 
 ---
 
+## Leeswijzer
+
+> **Voor beginners (optioneel):**
+> Oefening 04 heeft de meeste moving parts.
+> Alle alinea's met "Waarom dit" kun je zien als mini-achtergrond.
+> Gevorderden kunnen die overslaan en direct de snippets volgen.
+
+---
+
 ## De loop
 
 ```

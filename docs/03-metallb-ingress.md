@@ -16,6 +16,14 @@ port-forward.
 
 ---
 
+## Leeswijzer
+
+> **Voor beginners (optioneel):**
+> In deze oefening komen netwerkconcepten samen (LoadBalancer IP, Ingress, DNS-hostname).
+> Lees de "Wat dit doet" blokken eerst rustig door; plak pas daarna de YAML.
+
+---
+
 ## Achtergrond
 
 In cloud-Kubernetes (EKS, GKE, AKS) regelt `type: LoadBalancer` automatisch een load balancer met een extern IP. Op bare
@@ -253,6 +261,10 @@ Vanuit je laptop:
 > curl http://192.168.56.200
 > # 404 van Nginx — klopt, nog geen Ingress-regel
 > ```
+
+> **Voor beginners (optioneel):**
+> Deze `404` is hier juist positief:
+> je bereikt de ingress-controller wel, maar er is nog geen Ingress-regel voor jouw app.
 
 ---
 

@@ -14,6 +14,14 @@
 
 ---
 
+## Leeswijzer
+
+> **Voor beginners (optioneel):**
+> In deze oefening doe je bewust geen `kubectl apply` voor podinfo.
+> Dat voelt in het begin onnatuurlijk, maar is precies het GitOps-principe: Git verandert, ArgoCD voert uit.
+
+---
+
 ## Vereisten
 
 Oefening 01 afgerond. ArgoCD draait en de root app is Synced.
@@ -105,6 +113,10 @@ spec:
 ### 2. De ArgoCD Application aanmaken
 
 **`apps/apps/podinfo.yaml`**
+
+> **Voor beginners (optioneel):**
+> Zie deze `Application` als een "pointer":
+> hij zegt tegen ArgoCD *waar* de echte Kubernetes YAML staat (`manifests/apps/podinfo`) en *waar* die toegepast moet worden (namespace `podinfo`).
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1

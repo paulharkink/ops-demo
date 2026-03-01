@@ -14,6 +14,15 @@
 
 ---
 
+## Leeswijzer
+
+> **Voor beginners (optioneel):**
+> Deze bonusoefening is vooral "leren observeren".
+> Focus eerst op: stack komt up, Grafana opent, dashboards tonen data.
+> Daarna pas op fine-tuning van values.
+
+---
+
 ## Vereisten
 
 Oefeningen 01–03 afgerond. Ingress-Nginx draait en nip.io-URLs zijn bereikbaar vanaf je laptop.
@@ -118,6 +127,10 @@ spec:
 > ```
 
 De initiële sync duurt 5–8 minuten — de chart is groot en installeert veel CRDs.
+
+> **Voor beginners (optioneel):**
+> Dit duurt merkbaar langer dan eerdere oefeningen en dat is normaal.
+> Je installeert hier geen losse app, maar een complete monitoring-stack met veel onderdelen.
 
 ---
 

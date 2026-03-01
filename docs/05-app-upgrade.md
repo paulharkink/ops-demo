@@ -50,6 +50,15 @@ Tekton PipelineRun
 
 ---
 
+## Leeswijzer
+
+> **Voor beginners (optioneel):**
+> Zie oefening 05 als "begrijpen wat je net gebouwd hebt".
+> Het doel is minder nieuwe YAML, en meer leren herkennen van gedrag:
+> wie doet wat (Tekton commit, Argo sync, Kubernetes rollout).
+
+---
+
 ## Probeer het: handmatige downgrade
 
 Als de pipeline podinfo al naar `6.7.0` heeft gebracht, probeer dan een handmatige downgrade:

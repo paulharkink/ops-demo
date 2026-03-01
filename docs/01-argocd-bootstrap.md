@@ -14,6 +14,14 @@
 
 ---
 
+## Leeswijzer
+
+> **Voor beginners (optioneel):**
+> De extra uitlegblokken in deze oefening leggen uit *waarom* je iets doet.
+> Als je al ervaring hebt met ArgoCD/GitOps, kun je die blokken gerust overslaan en alleen de stappen/snippets uitvoeren.
+
+---
+
 ## Vereisten
 
 De VM draait en je bent ingelogd:
@@ -83,6 +91,10 @@ Login: `admin` / het wachtwoord uit de output van het script.
 
 Het bootstrap-script installeert ArgoCD, maar registreert jouw Git-repo niet in ArgoCD.
 Daarom moet je in deze stap expliciet je repo toevoegen, anders blijft `root` op `Unknown`/`authentication required`.
+
+> **Voor beginners (optioneel):**
+> ArgoCD weet pas *welke* Git-repo het moet lezen als je die repo registreert.
+> Deze stap gaat dus niet alleen over toegang/rechten, maar ook over het "bekend maken" van de repo zelf.
 
 Kies een van deze twee paden:
 
