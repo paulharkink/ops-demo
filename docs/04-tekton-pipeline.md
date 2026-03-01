@@ -6,7 +6,6 @@ volledige GitOps CI/CD-loop.
 
 ---
 
-
 ## Wat je leert
 
 - Tekton-concepten: Task, Pipeline, PipelineRun, Workspace
@@ -57,7 +56,46 @@ Je hebt nodig:
 ```yaml
 resources:
   - https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.65.1/release.yaml
+patches:
+  - path: namespace-podsecurity-patch.yaml
+    target:
+      kind: Namespace
+      name: tekton-pipelines
 ```
+
+Waarom dit:
+
+- `release.yaml` installeert Tekton Pipelines (controller, webhook, CRDs).
+- De `patches` regel past de namespace aan die al in de upstream release zit.
+- Zonder patch faalt de eerste TaskRun vaak op Pod Security admission.
+- Pod Security Admission is een Kubernetes-mechanisme dat per namespace bepaalt hoe streng pod-beveiliging wordt
+  afgedwongen.
+- In deze oefening zet de upstream Tekton install de namespace effectief op `restricted`; dat profiel eist o.a.
+  `runAsNonRoot`, `seccompProfile` en `allowPrivilegeEscalation=false`.
+- Tekton runtime-pods (zoals `prepare` en `step-*`) voldoen in deze setup niet altijd aan die eisen, waardoor je direct
+  `PodAdmissionFailed` krijgt voordat je pipeline-logica start.
+
+**`manifests/ci/tekton/namespace-podsecurity-patch.yaml`**
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tekton-pipelines
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+```
+
+Waarom dit:
+
+- Tekton maakt zelf tijdelijke pods aan per TaskRun (`prepare`, `step-*`).
+- Met `enforce=restricted` worden die pods in deze workshop-setup afgewezen.
+- Deze patch maakt de oefening reproduceerbaar op de single-node VM.
+- `enforce=privileged` betekent hier niet "alles in je cluster is onveilig", maar alleen dat deze ene namespace niet
+  door PSA wordt geblokkeerd.
+- We kiezen dit bewust als workshop trade-off: focus op GitOps/Tekton-flow, niet op PSA-hardening.
+- In productie kies je meestal niet `privileged`, maar harden je de Tekton setup zodat hij onder `baseline`/`restricted`
+  draait.
 
 **`apps/ci/tekton.yaml`**
 
@@ -103,6 +141,12 @@ Wacht tot Tekton draait (~3–5 minuten):
 > # tekton-pipelines-webhook-xxx      1/1   Running
 > ```
 
+Wat je hier valideert:
+
+- De Tekton controller verwerkt Pipeline/Task resources.
+- De Tekton webhook default/valideert objecten bij `kubectl apply`.
+- Als deze pods niet `Running` zijn, heeft het geen zin om door te gaan.
+
 ---
 
 ### 2. Pipeline-resources aanmaken
@@ -117,6 +161,11 @@ metadata:
   namespace: tekton-pipelines
 ```
 
+Waarom dit:
+
+- Deze serviceaccount draait de pipeline pods.
+- Alle permissies voor `validate` en eventuele cluster-calls hangen aan dit account.
+
 **`manifests/ci/pipeline/pipeline.yaml`** — zie de solution branch voor de volledige inhoud, of kopieer uit
 `reference-solution`:
 
@@ -124,6 +173,13 @@ metadata:
 > ```bash
 > git show origin/solution/04-tekton-pipeline:manifests/ci/pipeline/pipeline.yaml
 > ```
+
+Wat er in die pipeline zit:
+
+- `clone`: clonet jouw repo met credentials uit `git-credentials`.
+- `validate`: voert `kubectl --dry-run=client` uit op de podinfo manifests.
+- `bump-image-tag`: wijzigt de image tag in `deployment.yaml`.
+- `git-commit-push`: commit + push naar `main`, waarna ArgoCD de wijziging oppakt.
 
 **`manifests/ci/pipeline/pipelinerun.yaml`**
 
@@ -156,13 +212,22 @@ spec:
         secretName: git-credentials
 ```
 
+Waarom deze velden belangrijk zijn:
+
+- `pipelineRef`: kiest welke pipeline je start.
+- `params`: bepaalt repo en doelversie zonder de pipeline-definitie te wijzigen.
+- `workspaces.source`: tijdelijk werkvolume voor clone/edit/commit.
+- `workspaces.git-credentials`: secret mount voor Git auth.
+
 **`apps/ci/pipeline.yaml`**
 
 Belangrijk:
+
 - Dit bestand is alleen de ArgoCD `Application` wrapper.
 - Daarom is het klein en zie je hier geen Tekton-steps.
 - De echte pipeline-steps staan in `manifests/ci/pipeline/pipeline.yaml`
   (clone, validate, bump-image-tag, git-commit-push).
+- ArgoCD beheert dus alleen Tekton resources; de pipeline runtime gebeurt in Tekton zelf.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -209,6 +274,11 @@ resources:
   - https://storage.googleapis.com/tekton-releases/dashboard/latest/release-full.yaml
   - ingress.yaml
 ```
+
+Waarom dit:
+
+- `release-full.yaml` installeert de dashboard backend + service.
+- `ingress.yaml` maakt de UI bereikbaar via dezelfde ingress-nginx die je in oefening 03 bouwde.
 
 **`manifests/ci/dashboard/ingress.yaml`**
 
@@ -286,6 +356,11 @@ Maak een GitHub PAT aan met `repo`-scope en voer daarna een van deze opties uit:
 
 Dit maakt een Kubernetes Secret aan in het cluster — **het PAT komt niet in Git**.
 
+Tip:
+
+- Bij GitHub PAT over HTTPS kun je als username je GitHub username gebruiken.
+- `x-access-token` als username werkt vaak ook, zolang password de PAT is.
+
 ---
 
 ### 5. Pipeline triggeren
@@ -314,6 +389,13 @@ Of per pod:
 
 De PipelineRun duurt ~2–3 minuten.
 
+Wat je zou moeten zien:
+
+- eerst `clone`,
+- daarna `validate`,
+- dan `bump-image-tag`,
+- en als laatste `git-commit-push`.
+
 ---
 
 ### 6. Controleer de commit
@@ -335,6 +417,11 @@ Klik **Refresh** op de **podinfo** application in ArgoCD, of wacht op het automa
 > ```bash
 > kubectl rollout status deployment/podinfo -n podinfo
 > ```
+
+Waarom dit nodig is:
+
+- De pipeline praat niet direct met de podinfo Deployment.
+- De pipeline pusht alleen Git; ArgoCD voert de daadwerkelijke rollout uit.
 
 ---
 
@@ -369,6 +456,16 @@ Dan gebruik je **Tekton Triggers** met een webhook endpoint.
 
 Als je **GitHub** gebruikt, kun je onderstaande manifests direct volgen.
 Gebruik je GitLab/Gitea/Bitbucket, dan blijft het patroon hetzelfde maar de interceptor/payload-mapping kan verschillen.
+
+> [!IMPORTANT]
+> In deze workshop draait de cluster op een VirtualBox host-only netwerk (`192.168.56.x`).
+> Dat endpoint is niet publiek bereikbaar vanaf GitHub.
+> Dus: GitHub kan `tekton-webhook.192.168.56.200.nip.io` niet direct aanroepen.
+>
+> Voor echte GitHub webhooks heb je een brug nodig, bijvoorbeeld:
+> - een publieke tunnel (`ngrok`, `cloudflared tunnel`)
+> - een webhook relay (`smee.io`)
+> - of een publiek bereikbare cluster endpoint (geen host-only-only setup)
 
 ### 1. Triggers resources toevoegen
 
@@ -434,7 +531,7 @@ spec:
           - name: source
             volumeClaimTemplate:
               spec:
-                accessModes: [ReadWriteOnce]
+                accessModes: [ ReadWriteOnce ]
                 resources:
                   requests:
                     storage: 1Gi
@@ -546,21 +643,24 @@ spec:
 - Secret: dezelfde waarde als `secretToken`
 - Event: **Just the push event**
 
-Daarna maakt elke push een nieuwe `PipelineRun` aan.
+Zonder tunnel/relay of publiek endpoint zal GitHub deze URL niet kunnen bereiken.
+Met zo'n brug maakt elke push een nieuwe `PipelineRun` aan.
 
 ---
 
 ## Probleemoplossing
 
-| Symptoom                                | Oplossing                                                                                              |
-|-----------------------------------------|--------------------------------------------------------------------------------------------------------|
-| PipelineRun blijft "Running"            | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670`                                 |
-| Secret `git-credentials` niet gevonden  | Run in VM: `./scripts/vm/set-git-credentials.sh ...` (na `vagrant ssh` + `cd /vagrant`) of vanaf host: `vagrant ssh -c \"/vagrant/scripts/vm/set-git-credentials.sh ...\"` |
-| Push mislukt: 403 Forbidden             | PAT heeft onvoldoende rechten — `repo`-scope vereist                                                   |
-| ArgoCD synchroniseert niet              | Klik **Refresh** in de UI                                                                              |
-| `root` blijft OutOfSync op app `tekton` | Verwijder de lege `kustomize: {}` uit `apps/ci/tekton.yaml` (Argo normaliseert deze weg in live state) |
-| Tekton Dashboard toont standaard Nginx/404 | Controleer `apps/ci/tekton-dashboard.yaml` en `manifests/ci/dashboard/ingress.yaml` host/service/poort |
-| Webhook maakt geen PipelineRun aan      | Check `kubectl get eventlistener -n tekton-pipelines` en controleer GitHub webhook URL/secret/eventtype |
+| Symptoom                                   | Oplossing                                                                                                                                                                  |
+|--------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PipelineRun blijft "Running"               | `kubectl describe pipelinerun -n tekton-pipelines bump-podinfo-to-670`                                                                                                     |
+| Secret `git-credentials` niet gevonden     | Run in VM: `./scripts/vm/set-git-credentials.sh ...` (na `vagrant ssh` + `cd /vagrant`) of vanaf host: `vagrant ssh -c \"/vagrant/scripts/vm/set-git-credentials.sh ...\"` |
+| Push mislukt: 403 Forbidden                | PAT heeft onvoldoende rechten — `repo`-scope vereist                                                                                                                       |
+| ArgoCD synchroniseert niet                 | Klik **Refresh** in de UI                                                                                                                                                  |
+| `root` blijft OutOfSync op app `tekton`    | Verwijder de lege `kustomize: {}` uit `apps/ci/tekton.yaml` (Argo normaliseert deze weg in live state)                                                                     |
+| PipelineRun faalt met `PodAdmissionFailed` | Controleer dat `tekton-pipelines` label `pod-security.kubernetes.io/enforce=privileged` heeft (via `manifests/ci/tekton/namespace-podsecurity-patch.yaml`)                 |
+| `validate` task faalt met `Forbidden`      | Geef `pipeline-runner` read-rechten op de resources in namespace `podinfo` (Deployment/Service/Ingress/Namespace) of pas de validate-stap aan                              |
+| Tekton Dashboard toont standaard Nginx/404 | Controleer `apps/ci/tekton-dashboard.yaml` en `manifests/ci/dashboard/ingress.yaml` host/service/poort                                                                     |
+| Webhook maakt geen PipelineRun aan         | Check `kubectl get eventlistener -n tekton-pipelines` en controleer GitHub webhook URL/secret/eventtype                                                                    |
 
 ---
 
