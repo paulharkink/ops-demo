@@ -95,7 +95,7 @@ spec:
               #!/bin/sh
               set -eu
               echo "Running kubectl dry-run on manifests/apps/podinfo/"
-              kubectl apply --dry-run=client -f manifests/apps/podinfo/
+              kubectl create --dry-run=client -f manifests/apps/podinfo/
               echo "Validation passed."
       workspaces:
         - name: source
