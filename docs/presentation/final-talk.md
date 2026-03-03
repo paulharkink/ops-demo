@@ -1,150 +1,90 @@
-# Final Talk — GitOps in de praktijk
+# Final Talk - GitOps in de praktijk
 
----
+## 1. Wat we nu echt hebben staan
 
-## 1. Wat we gebouwd hebben
+Vandaag hebben we niet "een demo" gebouwd, maar een complete GitOps-loop:
 
-### Architectuurdiagram
+1. Git bevat de gewenste state.
+2. ArgoCD reconcilet de cluster daarnaar.
+3. Tekton wijzigt Git (image-tag bump), en ArgoCD pakt dat weer op.
+4. Alles is reproduceerbaar op een nieuwe VM.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Jouw laptop                                            │
-│                                                         │
-│  Browser  ──────────────────────────────────────────►   │
-│           podinfo.192.168.56.200.nip.io                 │
-│           argocd.192.168.56.200.nip.io                  │
-│           grafana.192.168.56.200.nip.io                 │
-└────────────────────────┬────────────────────────────────┘
-                         │ VirtualBox host-only
-                         ▼ 192.168.56.200 (MetalLB)
-┌─────────────────────────────────────────────────────────┐
-│  VM: ops-demo (192.168.56.10)                           │
-│                                                         │
-│  ┌──────────────────┐  ┌───────────────────────────┐    │
-│  │  Ingress-Nginx   │  │  ArgoCD                   │    │
-│  │  (LB: .200)      │  │  kijkt naar deze Git repo │    │
-│  └──────┬───────────┘  └───────────┬───────────────┘    │
-│         │                          │ synct              │
-│         ▼                          ▼                    │
-│  ┌──────────────────┐  ┌───────────────────────────┐    │
-│  │  podinfo         │  │  MetalLB                  │    │
-│  │  (Deployment)    │  │  (geeft LAN IP's uit)     │    │
-│  └──────────────────┘  └───────────────────────────┘    │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │  Tekton Pipeline                                 │   │
-│  │  clone → validate → bump tag → git push          │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-```
-
-### De GitOps loop
-
-1. Alles in de cluster staat als declaratie in deze Git repo
-2. ArgoCD kijkt naar de repo en reconcilet de cluster naar die gewenste state
-3. De Tekton pipeline wordt zelf ook door ArgoCD gedeployed, en pusht commits die ArgoCD daarna weer synct
-4. De enige `kubectl apply` die je vandaag deed: bootstrap van ArgoCD + PipelineRun triggeren
-
-### Stack recap
-
-| Component             | Rol                         |
-|-----------------------|-----------------------------|
-| k3s                   | Single-binary Kubernetes    |
-| ArgoCD                | GitOps engine (App-of-Apps) |
-| MetalLB               | Bare-metal LoadBalancer     |
-| Ingress-Nginx         | HTTP routing op hostname    |
-| Tekton                | CI pipeline (in-cluster)    |
-| podinfo               | Demo-applicatie             |
-| kube-prometheus-stack | Observability (bonus)       |
-
----
-
-## 2. Waarom GitOps in productie
-
-### De oude manier: imperatieve deploys
-
-> **VM**
-> ```bash
-> # Iemand draait dit op vrijdagmiddag
-> kubectl set image deployment/api api=company/api:v2.3.1-hotfix
-> # Geen review. Geen audit trail. Niemand weet wie dit om 16:47 deed.
-> ```
-
-### De GitOps manier
+### Snelle architectuur
 
 ```
-PR: "bump API naar v2.3.1-hotfix"
-  → peer review
-  → merge
-  → ArgoCD synct
-  → deploy gebeurt
-  → Git commit IS de audit trail
+Laptop/browser
+  -> argocd.192.168.56.200.nip.io
+  -> podinfo.192.168.56.200.nip.io
+  -> grafana.192.168.56.200.nip.io
+
+VirtualBox host-only netwerk
+
+VM (k3s)
+  -> ingress-nginx + MetalLB
+  -> ArgoCD (app-of-apps)
+  -> Tekton (CI in-cluster)
+  -> podinfo (demo workload)
+  -> monitoring (bonus)
 ```
 
-### Belangrijkste voordelen
+### Componenten in 1 regel
 
-**Audit trail**: Elke clusterwijziging heeft een Git commit: wie, wat, wanneer, waarom.
+| Component             | Waarom die hier zit                          |
+|-----------------------|----------------------------------------------|
+| k3s                   | Lichtgewicht Kubernetes voor lokale labs     |
+| ArgoCD                | GitOps controller                            |
+| MetalLB               | LoadBalancer IP op bare metal/VM             |
+| ingress-nginx         | HTTP routing op hostnames                    |
+| Tekton                | Pipeline als Kubernetes resources            |
+| podinfo               | Eenvoudige app om deploys zichtbaar te maken |
+| kube-prometheus-stack | Metrics en dashboards                        |
 
-**Drift detection**: Als iemand direct `kubectl apply` doet, ziet ArgoCD drift en kan het automatisch terugdraaien. De cluster convergeert altijd terug naar wat in Git staat.
+## 2. Waarom dit productie-relevant is
 
-**Disaster recovery**: Cluster weg? `vagrant up` + `./scripts/vm/bootstrap.sh` + `kubectl apply -f apps/root.yaml` en ArgoCD bouwt alles opnieuw op. Git is je backup.
+### Zonder GitOps (klassieke drift)
 
-**Samenwerking tussen teams**: Developers openen PR's voor deploys. Ops reviewt manifest-wijzigingen. Geen SSH-sleutels op productie nodig.
-
-**Rollback**: `git revert <commit>` + `git push`. Geen speciale tooling nodig.
-
-### Het App-of-Apps pattern
-
-Eén root Application beheert alle andere Applications. Nieuwe service toevoegen = één YAML-file in `apps/` toevoegen. De root app pakt die automatisch op.
-
-```
-apps/root.yaml  ──manages──►  apps/argocd.yaml
-                              apps/apps/podinfo.yaml
-                              apps/networking/metallb.yaml
-                              apps/networking/ingress-nginx.yaml
-                              apps/ci/tekton.yaml
-                              apps/ci/pipeline.yaml
-                              apps/monitoring/prometheus-grafana.yaml
+```bash
+kubectl set image deployment/api api=company/api:hotfix
 ```
 
----
+Dat werkt snel, maar je verliest context: geen review, lastig auditbaar, foutgevoelig.
 
-## 3. Wat is de volgende stap
+### Met GitOps
 
-### Secrets management
+1. Wijziging gaat via commit/PR.
+2. Review + merge.
+3. ArgoCD sync.
+4. Git geschiedenis is je audit trail en rollback-mechanisme.
 
-Vandaag: plain Kubernetes Secrets met GitHub PATs.  
-In productie: **Vault + external-secrets-operator**
+Concreet voordeel:
 
-```
-Vault (secret store)
-  → external-secrets-operator haalt secrets op
-  → maakt Kubernetes Secrets aan
-  → ArgoCD synct de rest
-```
+- Traceerbaarheid: wie veranderde wat en waarom.
+- Driftcontrole: handmatige clusterwijzigingen vallen op.
+- Herstelbaarheid: cluster kwijt -> opnieuw opbouwen vanuit Git.
+- Samenwerking: app- en platformwijzigingen via hetzelfde proces.
 
-### Multi-cluster met ApplicationSets
+## 3. App-of-Apps in het kort
 
-Vandaag: één cluster, één repo.  
-In productie: 10 clusters, één repo.
+`apps/root.yaml` verwijst naar onderliggende Argo Applications.
 
-```yaml
-# ArgoCD ApplicationSet: deploy podinfo naar elke cluster uit de lijst
-generators:
-  - list:
-      elements:
-        - cluster: staging
-        - cluster: prod-eu
-        - cluster: prod-us
-```
+Dat betekent: nieuwe capability toevoegen = nieuwe app-definitie committen.
+Geen losse handmatige installatiestappen op de cluster.
 
-### Progressive delivery
+## 4. Grenzen van deze workshop-opzet
 
-Vandaag: rolling update (all-or-nothing).  
-In productie: **Argo Rollouts** met canary of blue/green.
+Dit is een leeromgeving. In productie zou je strakker willen op o.a.:
 
-```
-Nieuwe versie → 5% van traffic
-  → metrics goed → 20% → 50% → 100%
-  → metrics slecht → auto-rollback
-```
+- Secrets: geen PATs als plain K8s secrets in Git-workflow, maar Vault + ESO of vergelijkbaar.
+- Security: PSA/namespace policies bewust hardenen i.p.v. versoepelen voor labs.
+- Multi-cluster: ApplicationSets en promotieflow (dev -> staging -> prod).
+- Delivery-strategie: canary/blue-green met meetbare rollback-criteria.
+
+## 5. Wat je mee moet nemen
+
+Als je 1 ding onthoudt:
+
+"Het cluster is een runtime-kopie van wat in Git staat."
+
+Niet andersom.
+
+Dat principe maakt deployments voorspelbaar, bespreekbaar en herstelbaar.
