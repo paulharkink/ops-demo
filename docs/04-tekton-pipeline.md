@@ -303,6 +303,11 @@ Waarom dit:
 
 - `release-full.yaml` installeert de dashboard backend + service.
 - `ingress.yaml` maakt de UI bereikbaar via dezelfde ingress-nginx die je in oefening 03 bouwde.
+- Een losse `ingress.yaml` zou ArgoCD ook zonder Kustomize kunnen toepassen.
+- We gebruiken Kustomize hier omdat je in een `resources:` lijst zowel een remote upstream manifest als lokale manifests
+  in een app kunt combineren.
+- Daardoor hoef je de upstream Tekton Dashboard YAML niet in je eigen repo te kopieeren, maar kun je wel lokaal je
+  eigen Ingress toevoegen.
 
 **`manifests/ci/dashboard/ingress.yaml`**
 
