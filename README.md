@@ -100,7 +100,9 @@ Belangrijk:
 | 01 | ArgoCD bootstrappen         | [docs/01-argocd-bootstrap.md](docs/01-argocd-bootstrap.md) | Kern  | 30 min |
 | 02 | podinfo deployen via GitOps | [docs/02-deploy-podinfo.md](docs/02-deploy-podinfo.md)     | Kern  | 30 min |
 | 03 | MetalLB + Ingress-Nginx     | [docs/03-metallb-ingress.md](docs/03-metallb-ingress.md)   | Kern  | 45 min |
+| 03b | Cloudflare Tunnel (webhooks) | [docs/03b-cloudflare-tunnel.md](docs/03b-cloudflare-tunnel.md) | Bonus | 30–45 min |
 | 04 | Tekton pipeline             | [docs/04-tekton-pipeline.md](docs/04-tekton-pipeline.md)   | Kern  | 45 min |
+| 04b | Tekton Triggers (webhook) | [docs/04b-tekton-triggers-webhook.md](docs/04b-tekton-triggers-webhook.md) | Bonus | 30–45 min |
 | 05 | App upgrade + reflectie     | [docs/05-app-upgrade.md](docs/05-app-upgrade.md)           | Kern  | 15 min |
 | 06 | Prometheus + Grafana        | [docs/06-monitoring.md](docs/06-monitoring.md)             | Bonus | 60 min |
 
