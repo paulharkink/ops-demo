@@ -1,11 +1,8 @@
 # Final Talk — GitOps in de praktijk
 
-**Duur**: ~20 min + Q&A  
-**Format**: Slides of whiteboard, optioneel met live demo
-
 ---
 
-## 1. Wat we gebouwd hebben (7 min)
+## 1. Wat we gebouwd hebben
 
 ### Architectuurdiagram
 
@@ -13,26 +10,26 @@
 ┌─────────────────────────────────────────────────────────┐
 │  Jouw laptop                                            │
 │                                                         │
-│  Browser  ──────────────────────────────────────────►  │
+│  Browser  ──────────────────────────────────────────►   │
 │           podinfo.192.168.56.200.nip.io                 │
 │           argocd.192.168.56.200.nip.io                  │
-│           grafana.192.168.56.200.nip.io (bonus)         │
+│           grafana.192.168.56.200.nip.io                 │
 └────────────────────────┬────────────────────────────────┘
                          │ VirtualBox host-only
                          ▼ 192.168.56.200 (MetalLB)
 ┌─────────────────────────────────────────────────────────┐
 │  VM: ops-demo (192.168.56.10)                           │
 │                                                         │
-│  ┌──────────────────┐  ┌───────────────────────────┐   │
-│  │  Ingress-Nginx   │  │  ArgoCD                   │   │
-│  │  (LB: .200)      │  │  kijkt naar deze Git repo │   │
-│  └──────┬───────────┘  └───────────┬───────────────┘   │
-│         │                          │ synct             │
+│  ┌──────────────────┐  ┌───────────────────────────┐    │
+│  │  Ingress-Nginx   │  │  ArgoCD                   │    │
+│  │  (LB: .200)      │  │  kijkt naar deze Git repo │    │
+│  └──────┬───────────┘  └───────────┬───────────────┘    │
+│         │                          │ synct              │
 │         ▼                          ▼                    │
-│  ┌──────────────────┐  ┌───────────────────────────┐   │
-│  │  podinfo         │  │  MetalLB                  │   │
-│  │  (Deployment)    │  │  (geeft LAN IP's uit)     │   │
-│  └──────────────────┘  └───────────────────────────┘   │
+│  ┌──────────────────┐  ┌───────────────────────────┐    │
+│  │  podinfo         │  │  MetalLB                  │    │
+│  │  (Deployment)    │  │  (geeft LAN IP's uit)     │    │
+│  └──────────────────┘  └───────────────────────────┘    │
 │                                                         │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Tekton Pipeline                                 │   │
@@ -41,7 +38,7 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-### De GitOps loop (vertel dit hardop)
+### De GitOps loop
 
 1. Alles in de cluster staat als declaratie in deze Git repo
 2. ArgoCD kijkt naar de repo en reconcilet de cluster naar die gewenste state
@@ -50,19 +47,19 @@
 
 ### Stack recap
 
-| Component | Rol |
-|-----------|-----|
-| k3s | Single-binary Kubernetes |
-| ArgoCD | GitOps engine (App-of-Apps) |
-| MetalLB | Bare-metal LoadBalancer |
-| Ingress-Nginx | HTTP routing op hostname |
-| Tekton | CI pipeline (in-cluster) |
-| podinfo | Demo-applicatie |
-| kube-prometheus-stack | Observability (bonus) |
+| Component             | Rol                         |
+|-----------------------|-----------------------------|
+| k3s                   | Single-binary Kubernetes    |
+| ArgoCD                | GitOps engine (App-of-Apps) |
+| MetalLB               | Bare-metal LoadBalancer     |
+| Ingress-Nginx         | HTTP routing op hostname    |
+| Tekton                | CI pipeline (in-cluster)    |
+| podinfo               | Demo-applicatie             |
+| kube-prometheus-stack | Observability (bonus)       |
 
 ---
 
-## 2. Waarom GitOps in productie (8 min)
+## 2. Waarom GitOps in productie
 
 ### De oude manier: imperatieve deploys
 
@@ -96,7 +93,7 @@ PR: "bump API naar v2.3.1-hotfix"
 
 **Rollback**: `git revert <commit>` + `git push`. Geen speciale tooling nodig.
 
-### Het App-of-Apps pattern (kort)
+### Het App-of-Apps pattern
 
 Eén root Application beheert alle andere Applications. Nieuwe service toevoegen = één YAML-file in `apps/` toevoegen. De root app pakt die automatisch op.
 
@@ -112,7 +109,7 @@ apps/root.yaml  ──manages──►  apps/argocd.yaml
 
 ---
 
-## 3. Wat is de volgende stap (5 min)
+## 3. Wat is de volgende stap
 
 ### Secrets management
 
@@ -151,21 +148,3 @@ Nieuwe versie → 5% van traffic
   → metrics goed → 20% → 50% → 100%
   → metrics slecht → auto-rollback
 ```
-
----
-
-## Optionele live demo (~5 min)
-
-Doe een one-line wijziging in `manifests/apps/podinfo/deployment.yaml` (bijv. UI-kleur),
-push naar GitHub, klik **Refresh** in ArgoCD en laat pod restart + nieuwe UI zien.
-
-De groep heeft dit al gedaan, maar live verteld landt de GitOps loop beter.
-
----
-
-## Q&A prompts (als het stil valt)
-
-- "Hoe pak je database migrations aan in een GitOps flow?"
-- "Wat gebeurt er als twee mensen tegelijk naar Git pushen?"
-- "Wanneer is GitOps NIET de juiste tool?" (antwoord: local dev, scripts, one-off jobs)
-- "Hoe houd je secrets op schaal uit Git?"
