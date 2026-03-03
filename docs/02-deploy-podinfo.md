@@ -5,7 +5,6 @@
 
 ---
 
-
 ## Wat je leert
 
 - Hoe je een ArgoCD Application toevoegt door één bestand te committen
@@ -116,7 +115,8 @@ spec:
 
 > **Voor beginners (optioneel):**
 > Zie deze `Application` als een "pointer":
-> hij zegt tegen ArgoCD *waar* de echte Kubernetes YAML staat (`manifests/apps/podinfo`) en *waar* die toegepast moet worden (namespace `podinfo`).
+> hij zegt tegen ArgoCD *waar* de echte Kubernetes YAML staat (`manifests/apps/podinfo`) en *waar* die toegepast moet
+> worden (namespace `podinfo`).
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -188,9 +188,12 @@ Wacht tot je `Synced` en `Healthy` ziet. Dan:
 > kubectl port-forward svc/podinfo -n podinfo 9898:80
 > ```
 
-In een ander terminal (of via curl):
+> *Optioneel*: hiermee kun je podinfo nog niet zien in je browser. Probeer dat eerst voor elkaar te krijgen, zodat
+> onderstaand commando ook vanaf de host werkt
 
-> **HOST**
+In een andere terminal:
+
+> **VM**
 > ```bash
 > curl http://localhost:9898
 > # {"hostname":"podinfo-xxx","version":"6.6.2", ...}
@@ -225,9 +228,8 @@ Commit en push:
 > git push
 > ```
 
-Binnen ~3 minuten (standaard poll-interval van ArgoCD) herstart de pod
-en zie je de nieuwe kleur. Je kunt ook op **Refresh** klikken in de UI
-voor direct effect.
+Binnen ~3 minuten (standaard poll-interval van ArgoCD) herstart de pod en zie je de nieuwe kleur (indien je het
+optionele deel van stap 5 hebt gedaan). Je kunt ook op **Refresh** klikken in de UI voor direct effect.
 
 ---
 
