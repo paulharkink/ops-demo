@@ -20,6 +20,16 @@
 > De extra uitlegblokken in deze oefening leggen uit *waarom* je iets doet.
 > Als je al ervaring hebt met ArgoCD/GitOps, kun je die blokken gerust overslaan en alleen de stappen/snippets uitvoeren.
 
+## Vooraf lezen (optioneel)
+
+In deze workshop gebruiken we **Helm** voor het eerst in **stap 1**,
+waar `bootstrap.sh` ArgoCD installeert via een Helm chart.
+
+Wil je Helm eerst kort opfrissen:
+
+- Helm docs (startpunt): https://helm.sh/docs/
+- Helm quickstart: https://helm.sh/docs/intro/quickstart/
+
 ---
 
 ## Vereisten
@@ -133,6 +143,9 @@ Gebruik credentials die read-toegang geven tot je Git-repo.
 Als je **GitHub** gebruikt:
 
 1. Ga naar **Settings → Developer settings → [Personal access tokens](https://github.com/settings/tokens)**
+   Direct naar nieuw token:
+   - Fine-grained: https://github.com/settings/personal-access-tokens/new
+   - Classic: https://github.com/settings/tokens/new
 2. Maak bij voorkeur een **fine-grained token**
 3. Geef de token toegang tot jouw workshop-repo
 4. Zet minimaal repository permission:

@@ -26,11 +26,17 @@
 ## Vereisten
 
 - Oefening 03 afgerond (Ingress-Nginx werkt)
-- Een Cloudflare account
 - Je repo/fork op `main`
 
-Optioneel:
-- Eigen domein in Cloudflare (alleen nodig voor **Route B** hieronder)
+Optioneel (alleen nodig voor **Route A** hieronder):
+
+- [cloudflared](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/) op de
+  host _of_ vm
+
+Optioneel (alleen nodig voor **Route B** hieronder):
+
+- Een Cloudflare account
+- Eigen domein in Cloudflare
 
 ---
 
@@ -106,6 +112,7 @@ el-github-push-listener.tekton-pipelines.svc:8080
 ```
 
 Belangrijk:
+
 - Dit werkt ook als je cluster alleen op host-only netwerk draait.
 - Cloudflare bereikt je cluster via de actieve tunnelverbinding, niet via je LAN-IP.
 
@@ -130,8 +137,8 @@ In dezelfde tunnel:
 
 1. Ga naar **Public Hostnames**
 2. Voeg een hostname toe, bijvoorbeeld:
-   - Subdomain: `tekton-webhook`
-   - Domain: `<jouw-domein>`
+    - Subdomain: `tekton-webhook`
+    - Domain: `<jouw-domein>`
 3. Service type: `HTTP`
 4. URL: `http://el-github-push-listener.tekton-pipelines.svc.cluster.local:8080`
 5. Sla op
@@ -233,6 +240,7 @@ spec:
 ```
 
 Vervang:
+
 - `PLAK_HIER_JE_CLOUDFLARE_TUNNEL_TOKEN`
 - `JOUW_FORK_URL`
 
@@ -277,19 +285,20 @@ Gebruik in beide gevallen **niet** meer de host-only URL met `192.168.56.200.nip
 
 ## Probleemoplossing
 
-| Symptoom | Oplossing |
-|---|---|
-| cloudflared pod blijft CrashLoopBackOff | Controleer of de tunnel token klopt en niet verlopen/ingetrokken is |
-| Tunnel lijkt up, maar webhook geeft 502/504 | Controleer of `el-github-push-listener` service bestaat in `tekton-pipelines` |
-| Geen verkeer in Tekton na GitHub push | Controleer GitHub webhook deliveries + event type `push` + secret |
-| Argo app `cloudflared` blijft `Unknown` | Controleer of `repoURL` in `apps/networking/cloudflared.yaml` naar jouw fork wijst |
-| `trycloudflare.com` URL werkt eerst wel maar later niet meer | Quick tunnel is tijdelijk; start opnieuw of gebruik Route B |
+| Symptoom                                                     | Oplossing                                                                          |
+|--------------------------------------------------------------|------------------------------------------------------------------------------------|
+| cloudflared pod blijft CrashLoopBackOff                      | Controleer of de tunnel token klopt en niet verlopen/ingetrokken is                |
+| Tunnel lijkt up, maar webhook geeft 502/504                  | Controleer of `el-github-push-listener` service bestaat in `tekton-pipelines`      |
+| Geen verkeer in Tekton na GitHub push                        | Controleer GitHub webhook deliveries + event type `push` + secret                  |
+| Argo app `cloudflared` blijft `Unknown`                      | Controleer of `repoURL` in `apps/networking/cloudflared.yaml` naar jouw fork wijst |
+| `trycloudflare.com` URL werkt eerst wel maar later niet meer | Quick tunnel is tijdelijk; start opnieuw of gebruik Route B                        |
 
 ---
 
 ## Security-opmerking
 
 Gebruik in een echte omgeving liever:
+
 - externe secret manager voor tunnel token
 - aparte Cloudflare tunnel per omgeving
 - least-privilege Cloudflare account/API instellingen
@@ -304,7 +313,7 @@ Wil je een voorbeeld zien zonder alles handmatig te typen?
 
 - Branch: `solution/03b-cloudflare-tunnel`
 - Daarin staan:
-  - `apps/networking/cloudflared.yaml`
-  - `manifests/networking/cloudflared/namespace.yaml`
-  - `manifests/networking/cloudflared/token.secret.yaml` (placeholder token)
-  - `manifests/networking/cloudflared/deployment.yaml`
+    - `apps/networking/cloudflared.yaml`
+    - `manifests/networking/cloudflared/namespace.yaml`
+    - `manifests/networking/cloudflared/token.secret.yaml` (placeholder token)
+    - `manifests/networking/cloudflared/deployment.yaml`

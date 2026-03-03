@@ -21,6 +21,18 @@ volledige GitOps CI/CD-loop.
 > Alle alinea's met "Waarom dit" kun je zien als mini-achtergrond.
 > Gevorderden kunnen die overslaan en direct de snippets volgen.
 
+## Vooraf lezen (optioneel)
+
+Als Tekton nieuw voor je is, skim eerst deze pagina's:
+
+- Tekton docs (startpunt): https://tekton.dev/docs/
+- Core concepten (Tasks, Pipelines, PipelineRuns): https://tekton.dev/docs/pipelines/
+- Eerste voorbeeldpipeline: https://tekton.dev/docs/getting-started/pipelines/
+- Kustomize docs (startpunt): https://kubectl.docs.kubernetes.io/references/kustomize/
+
+In deze workshop gebruiken we **Kustomize** voor het eerst in **stap 1**
+met `manifests/ci/tekton/kustomization.yaml`.
+
 ---
 
 ## De loop
@@ -53,6 +65,9 @@ Oefeningen 01–03 afgerond. podinfo is bereikbaar via **http://podinfo.192.168.
 Je hebt nodig:
 
 - Een GitHub Personal Access Token (PAT) met **repo**-scope (lezen + schrijven)
+  Maak er direct een aan via:
+  - Fine-grained: https://github.com/settings/personal-access-tokens/new
+  - Classic: https://github.com/settings/tokens/new
 
 ---
 
@@ -76,8 +91,8 @@ Waarom dit:
 
 - `release.yaml` installeert Tekton Pipelines (controller, webhook, CRDs).
 - De `patches` regel past de namespace aan die al in de upstream release zit.
-- Zonder patch faalt de eerste TaskRun vaak op Pod Security admission.
-- Pod Security Admission is een Kubernetes-mechanisme dat per namespace bepaalt hoe streng pod-beveiliging wordt
+- Zonder patch faalt de eerste TaskRun vaak op Pod Security Admission (PSA).
+- Pod Security Admission (PSA) is een Kubernetes-mechanisme dat per namespace bepaalt hoe streng pod-beveiliging wordt
   afgedwongen.
 - In deze oefening zet de upstream Tekton install de namespace effectief op `restricted`; dat profiel eist o.a.
   `runAsNonRoot`, `seccompProfile` en `allowPrivilegeEscalation=false`.
@@ -176,7 +191,7 @@ Waarom dit:
 - Alle permissies voor `validate` en eventuele cluster-calls hangen aan dit account.
 
 **`manifests/ci/pipeline/pipeline.yaml`** — zie de solution branch voor de volledige inhoud, of kopieer uit
-`reference-solution`:
+`reference-solution`: 
 
 > **HOST**
 > ```bash
@@ -356,7 +371,11 @@ Dit is een verplichte stap vóór je de PipelineRun triggert.
 Zonder `git-credentials` secret faalt de `clone` task direct.
 
 De pipeline moet kunnen pushen naar jouw fork.
-Maak een GitHub PAT aan met `repo`-scope en voer daarna een van deze opties uit:
+Maak een GitHub PAT aan met `repo`-scope en voer daarna een van deze opties uit.
+Direct links:
+
+- Fine-grained token: https://github.com/settings/personal-access-tokens/new
+- Classic token: https://github.com/settings/tokens/new
 
 > **VM**
 > ```bash
