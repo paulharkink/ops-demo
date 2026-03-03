@@ -53,6 +53,8 @@ grafana:
 
 prometheus:
   prometheusSpec:
+    externalLabels:
+      cluster: ops-demo
     resources:
       requests:
         cpu: 200m
@@ -212,5 +214,5 @@ ArgoCD synchroniseert de Helm-release en Grafana herstart. Log daarna in met het
 |-------------------------|---------------------------------------------------------------------------------|
 | Pods in Pending         | VM heeft te weinig geheugen — `kubectl describe pod` voor details               |
 | Grafana 502 van Nginx   | Pod is nog niet klaar, even wachten                                             |
-| Geen data in dashboards | Prometheus heeft ~2 minuten nodig voor de eerste scrape                         |
+| Geen data in dashboards | Wacht 2 minuten op eerste scrape. Blijft het leeg: zet `prometheus.prometheusSpec.externalLabels.cluster: ops-demo` en kies in Grafana de juiste `cluster`-variabele (of `All`) |
 | CRD-conflict bij sync   | Eerste sync installeert CRDs, tweede sync past resources toe — opnieuw proberen |
