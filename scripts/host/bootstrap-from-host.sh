@@ -11,7 +11,7 @@ command -v vagrant >/dev/null 2>&1 || {
 }
 
 echo "[ops-demo] Checking VM status..."
-if ! vagrant status --machine-readable | rg -q ',state,running'; then
+if ! vagrant status --machine-readable | grep -q ',state,running'; then
   echo "[ops-demo] VM is not running; starting with vagrant up..."
   vagrant up
 fi

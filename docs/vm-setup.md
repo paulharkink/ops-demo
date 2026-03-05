@@ -135,6 +135,8 @@ Dan `vagrant up` opnieuw.
 
 | Symptoom                       | Oplossing                                             |
 |--------------------------------|-------------------------------------------------------|
+| Apple Silicon: VM start niet, box mismatch (`arm64`/`amd64`) | Check `uname -m` en `vagrant box list`. Op Apple Silicon: verwijder en voeg de box opnieuw toe met `--architecture arm64`. Gebruik de officiële VirtualBox Apple Silicon installer. |
+| Windows: blijft hangen bij netwerkadapter setup | Probeer `vagrant up` 1-2 keer opnieuw. Helpt dit niet: check `VBoxManage list hostonlyifs`, open VirtualBox eenmalig als Administrator (laat VM 1x booten), en probeer opnieuw. |
 | "No usable default provider"   | VirtualBox niet geïnstalleerd of laptop niet herstart |
 | VT-x/AMD-V niet beschikbaar    | Schakel virtualisatie in via BIOS/UEFI                |
 | `kubectl get nodes` → NotReady | k3s start nog op, wacht 30–60 seconden                |
