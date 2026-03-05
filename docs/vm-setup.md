@@ -8,11 +8,11 @@ Alles draait in een VirtualBox-VM die Vagrant voor je opzet. Volg deze stappen v
 
 Doe dit de dag ervoor — niet op de ochtend van de workshop zelf.
 
-| Tool       | Versie      | Download                                          | Of op Mac                 |
-|------------|-------------|---------------------------------------------------|---------------------------|
-| VirtualBox | 7.x         | https://www.virtualbox.org/wiki/Downloads         | `brew install virtualbox` |
-| Vagrant    | 2.4.x       | https://developer.hashicorp.com/vagrant/downloads | `brew install vagrant`    |
-| Git        | willekeurig | https://git-scm.com/downloads                     |                           |
+| Tool | Versie | Download | Of op Mac |
+|---|---|---|---|
+| VirtualBox | 7.x | [Download][vbox-download] | `brew install virtualbox` |
+| Vagrant | 2.4.x | [Download][vagrant-download] | `brew install vagrant` |
+| Git | willekeurig | [Download][git-download] | |
 
 Minimaal 12 GB vrij RAM, ~15 GB schijfruimte.
 
@@ -47,15 +47,16 @@ Fork de repo naar je eigen GitHub-account via https://github.com/paulharkink/ops
 > vagrant up
 > ```
 
-De eerste keer duurt dit 10–15 minuten. Vagrant downloadt de Ubuntu 24.04 box, installeert k3s, Helm en yq, en haalt de
-workshop-images alvast op. Daarna start de VM in een paar seconden.
+De eerste keer duurt dit 10–15 minuten. Vagrant downloadt de Ubuntu 24.04 box,
+installeert k3s, Helm en yq, en haalt de workshop-images alvast op.
+Daarna start de VM in een paar seconden.
 
 Aan het einde zie je:
 
 ```
-════════════════════════════════════════════════════════
+===============================
   VM provisioned successfully!
-════════════════════════════════════════════════════════
+===============================
 ```
 
 ---
@@ -133,11 +134,19 @@ Dan `vagrant up` opnieuw.
 
 ## Probleemoplossing
 
-| Symptoom                       | Oplossing                                             |
-|--------------------------------|-------------------------------------------------------|
-| Apple Silicon: VM start niet, box mismatch (`arm64`/`amd64`) | Check `uname -m` en `vagrant box list`. Op Apple Silicon: verwijder en voeg de box opnieuw toe met `--architecture arm64`. Gebruik de officiële VirtualBox Apple Silicon installer. |
-| Windows: blijft hangen bij netwerkadapter setup | Probeer `vagrant up` 1-2 keer opnieuw. Helpt dit niet: check `VBoxManage list hostonlyifs`, open VirtualBox eenmalig als Administrator (laat VM 1x booten), en probeer opnieuw. |
-| "No usable default provider"   | VirtualBox niet geïnstalleerd of laptop niet herstart |
-| VT-x/AMD-V niet beschikbaar    | Schakel virtualisatie in via BIOS/UEFI                |
-| `kubectl get nodes` → NotReady | k3s start nog op, wacht 30–60 seconden                |
-| `/vagrant` is leeg             | Shared folder probleem — probeer `vagrant reload`     |
+Zie het volledige overzicht:
+
+- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+
+VM-setup specifieke checks:
+
+| Symptoom | Oplossing |
+|---|---|
+| "No usable default provider" | VirtualBox niet geïnstalleerd of laptop niet herstart. |
+| VT-x/AMD-V niet beschikbaar | Schakel virtualisatie in via BIOS/UEFI. |
+| `kubectl get nodes` -> `NotReady` | k3s start nog op, wacht 30-60 seconden. |
+| `/vagrant` is leeg | Shared folder probleem: probeer `vagrant reload`. |
+
+[vbox-download]: https://www.virtualbox.org/wiki/Downloads
+[vagrant-download]: https://developer.hashicorp.com/vagrant/downloads
+[git-download]: https://git-scm.com/downloads
