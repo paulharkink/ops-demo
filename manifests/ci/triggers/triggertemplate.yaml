@@ -1,0 +1,40 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github-push-template
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: repo-url
+      default: https://github.com/paulharkink/ops-demo.git
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: webhook-bump-
+        namespace: tekton-pipelines
+      spec:
+        pipelineRef:
+          name: gitops-image-bump
+        taskRunTemplate:
+          serviceAccountName: pipeline-runner
+        params:
+          - name: repo-url
+            value: $(tt.params.repo-url)
+          - name: new-tag
+            value: "6.7.0"
+          - name: git-user-name
+            value: "Workshop Pipeline"
+          - name: git-user-email
+            value: "pipeline@workshop.local"
+        workspaces:
+          - name: source
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 1Gi
+          - name: git-credentials
+            secret:
+              secretName: git-credentials
