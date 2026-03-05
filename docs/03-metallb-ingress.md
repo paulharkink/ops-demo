@@ -378,7 +378,7 @@ Beide bereikbaar vanaf je laptop zonder port-forward.
 | Symptoom                              | Oplossing                                                                                                          |
 |---------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | `EXTERNAL-IP` blijft `<pending>`      | MetalLB is nog niet klaar — check `kubectl get pods -n metallb-system`                                             |
-| curl naar 192.168.56.200 time-out     | VirtualBox host-only adapter niet geconfigureerd — zie vm-setup.md                                                 |
+| curl naar 192.168.56.200 time-out     | VirtualBox host-only adapter niet geconfigureerd — zie `TROUBLESHOOTING.md`                                         |
 | nip.io resolvet niet                  | Tijdelijk DNS-probleem, probeer opnieuw of voeg toe aan `/etc/hosts`                                               |
 | ArgoCD ingress geeft 502              | Wacht tot ArgoCD herstart na de values-wijziging                                                                   |
 | MetalLB app blijft OutOfSync op CRD's | Voeg in `apps/networking/metallb.yaml` `ignoreDifferences` toe voor CRD `caBundle` drift (zie voorbeeld hierboven) |

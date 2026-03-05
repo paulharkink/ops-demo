@@ -9,11 +9,15 @@ lokaal op een single-node k3s cluster in een VM.
 
 Je hebt drie dingen nodig op je laptop. Installeer ze de dag van tevoren — niet op de dag zelf.
 
-| Tool | Download |
-|---|---|
-| VirtualBox 7.x | [virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads) |
-| Vagrant 2.4.x | [developer.hashicorp.com/vagrant/downloads](https://developer.hashicorp.com/vagrant/downloads) |
-| Git | [git-scm.com/downloads](https://git-scm.com/downloads) |
+| Tool           | Download                |
+|----------------|-------------------------|
+| VirtualBox 7.x | [Download][vbox-download] |
+| Vagrant 2.4.x  | [Download][vagrant-download] |
+| Git            | [Download][git-download] |
+
+[vbox-download]: https://www.virtualbox.org/wiki/Downloads
+[vagrant-download]: https://developer.hashicorp.com/vagrant/downloads
+[git-download]: https://git-scm.com/downloads
 
 Op Windows: reboot alleen als installer/Windows daarom vraagt.
 
@@ -77,7 +81,7 @@ kun je zelf pushen zonder dat je toegang nodig hebt tot de originele repo.
 http://localhost:8080
 ```
 
-Volg daarna de oefeningen in volgorde. Zie [docs/vm-setup.md](docs/vm-setup.md) als er iets misgaat bij de VM.
+Volg daarna de oefeningen in volgorde. Zie [TROUBLESHOOTING.md](TROUBLESHOOTING.md) als er iets misgaat bij de VM.
 Deze quickstart voert bootstrap al uit.
 In Oefening 01 kun je dan direct door naar verificatie en commit/push van
 `apps/root.yaml`.

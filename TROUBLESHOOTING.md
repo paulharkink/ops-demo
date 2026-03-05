@@ -2,6 +2,14 @@
 
 ## Veelvoorkomende problemen
 
+### VM preflight check faalt
+
+- Run:
+  ```bash
+  VBoxManage --version && vagrant --version && git --version
+  ```
+- Als een tool geen versie toont: (her)installeer die tool eerst.
+
 ### Apple Silicon: VM start niet (`arm64` vs `amd64`)
 
 - Check host + box-architectuur: `uname -m` en `vagrant box list`.
@@ -33,6 +41,36 @@
 
 - Je zit mogelijk in een andere repo-map dan de VM die nu draait.
 - Controleer de `directory` kolom in `vagrant global-status --prune`.
+
+### "No usable default provider"
+
+- VirtualBox is niet geïnstalleerd, of de host moet nog herstarten.
+
+### VT-x/AMD-V niet beschikbaar
+
+- Schakel virtualisatie in via BIOS/UEFI.
+
+### `kubectl get nodes` toont `NotReady`
+
+- k3s start nog op; wacht 30-60 seconden en probeer opnieuw.
+
+### `/vagrant` is leeg
+
+- Shared folder mount is mislukt; run `vagrant reload`.
+
+### Host-only netwerk ontbreekt (`192.168.56.x` niet bereikbaar)
+
+- Check of adapter bestaat:
+  ```bash
+  VBoxManage list hostonlyifs
+  ```
+- Verwacht: een host-only interface met subnet `192.168.56.x`.
+- Als die ontbreekt:
+  ```bash
+  VBoxManage hostonlyif create
+  VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+  ```
+- Start daarna de VM opnieuw met `vagrant up`.
 
 ### Ik weet het ArgoCD admin-wachtwoord niet (meer)
 
