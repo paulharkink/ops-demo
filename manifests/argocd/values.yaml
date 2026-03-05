@@ -11,15 +11,13 @@ server:
   extraArgs:
     - --insecure
 
-  # ── Exercise 03: uncomment this block after Ingress-Nginx is deployed ──────
-  # ingress:
-  #   enabled: true
-  #   ingressClassName: nginx
-  #   hostname: argocd.192.168.56.200.nip.io
-  #   annotations:
-  #     nginx.ingress.kubernetes.io/ssl-passthrough: "false"
-  #     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-  # ──────────────────────────────────────────────────────────────────────────
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: argocd.192.168.56.200.nip.io
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 
 configs:
   params:
