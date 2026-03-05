@@ -1,0 +1,10 @@
+# Default: normalize text files in repo
+* text=auto
+
+# Shell scripts must stay LF, also on Windows checkouts
+*.sh text eol=lf
+
+# Windows-native script types keep CRLF for convenience
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
