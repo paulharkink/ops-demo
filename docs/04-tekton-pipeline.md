@@ -403,7 +403,7 @@ Pas daarna de PipelineRun starten:
 
 > **VM**
 > ```bash
-> kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
+> kubectl apply -f /vagrant/manifests/ci/pipeline/pipelinerun.yaml
 > ```
 
 Volg de voortgang:
@@ -477,7 +477,7 @@ De naam van een PipelineRun moet uniek zijn:
 > **VM**
 > ```bash
 > kubectl delete pipelinerun bump-podinfo-to-670 -n tekton-pipelines
-> kubectl apply -f manifests/ci/pipeline/pipelinerun.yaml
+> kubectl apply -f /vagrant/manifests/ci/pipeline/pipelinerun.yaml
 > ```
 
 ---
